@@ -1,0 +1,90 @@
+﻿
+
+ 
+        public AllowedClass[] AllowedArray1 = new AllowedClass[] {
+//Id,Name
+            new AllowedClass(){ EntityName = "AspNetRoles",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+//Id,UserName,PasswordHash,SecurityStamp,Discriminator
+            new AllowedClass(){ EntityName = "AspNetUsers",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+//Id,Name,NameCn
+            new AllowedClass(){ EntityName = "Brand",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+//Id,Name,NameCn,TaxRate
+            new AllowedClass(){ EntityName = "Category",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+//Id,CategoryId,Name,NameCn
+            new AllowedClass(){ EntityName = "CategoryAlias",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+			        {"CategoryId","Category"}, 
+                },
+            },
+//Id,TaxCodeId,EntryPortId,DutiablePrice,DeclaredAlias,DeclaredName,ProductId,Sku,UserId,CategoryAliasId,Formula,CategoryId
+            new AllowedClass(){ EntityName = "Declaration",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+			        {"CategoryId","Category"}, 
+			        {"EntryPortId","EntryPort"}, 
+			        {"ProductId","Product"}, 
+			        {"CategoryAliasId","CategoryAlias"}, 
+			        {"TaxCodeId","TaxCode"}, 
+                },
+            },
+//Id,Name
+            new AllowedClass(){ EntityName = "EntryPort",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+//Id,Barcode,Name,NameCn,BrandId,Weight,Price,CategoryId,ImageUrl,LastModify,ExactNameCn,Spec,NetWeight,Concentration,UnitShape,PackageType,UnitQuantity,Spec1,Spec2,Spec3,Spec4,Spec5
+            new AllowedClass(){ EntityName = "Product",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+			        {"BrandId","Brand"}, 
+			        {"CategoryId","Category"}, 
+                },
+            },
+//id,ProductId,AliasName,IsQuickCode
+            new AllowedClass(){ EntityName = "ProductAlia",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+			        {"ProductId","Product"}, 
+                },
+            },
+//Id,EntryPortId,TaxRate,ProductId
+            new AllowedClass(){ EntityName = "ProductTax",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+//Id,Name,Value,DutiablePrice,EntryPortId,NetWeight
+            new AllowedClass(){ EntityName = "SimpleDeclaration",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+			        {"EntryPortId","EntryPort"}, 
+                },
+            },
+//Id,ParentId,NodeLevel,Code,Name,Unit,DefaultDutiablePrice,Rate,EntryPortId
+            new AllowedClass(){ EntityName = "TaxCode",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+			        {"EntryPortId","EntryPort"}, 
+			        {"TaxCode2Id","TaxCode2"}, 
+                },
+            },
+        };
+

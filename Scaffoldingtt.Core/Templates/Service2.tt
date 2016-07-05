@@ -1,0 +1,294 @@
+﻿<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ include file="base.tt"#><#@ 
+ output extension=".txt"#><#
+
+var textTransform = DynamicTextTransformation.Create(this); 
+var code = new CodeGenerationTools(this);
+var ef = new MetadataTools(this);
+var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
+var	fileManager = EntityFrameworkTemplateFileManager.Create(this);
+var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);
+var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
+var container = itemCollection.OfType<EntityContainer>().FirstOrDefault(); 
+
+//const  
+
+
+if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile)) 
+{
+    return string.Empty;  
+}
+
+    
+
+WriteHeader(codeStringGenerator, fileManager); 
+
+
+foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection))
+{
+        if(!codeStringGenerator.GenerateAll)
+        {
+        var founditem= codeStringGenerator.Allowed(entity.Name);
+
+        if(!founditem)
+            continue;
+        }
+
+        var dbsetproperty = code.Escape(entity);
+
+        var simpleProperties = typeMapper.GetSimpleProperties(entity, codeStringGenerator.GetEntityExcludedProperites(entity.Name));
+		var navigationProperties = typeMapper.GetNavigationProperties(entity);
+
+        foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+        {
+            if(typeMapper.GetTypeName(entitySet.ElementType) == code.Escape(entity))
+                dbsetproperty = code.Escape(entitySet);
+        }
+
+        var allowedclass = codeStringGenerator.GetAllowedClass(entity.Name);
+        var id = "Id";
+        var name = "Name";
+        if(allowedclass != null)
+        {
+            id = allowedclass.PropertyId;
+            name = allowedclass.PropertyName;
+        }
+
+        fileManager.StartNewFile(code.Escape(entity) + "ServiceCurd.cs");
+#>
+<#=codeStringGenerator.UsingDirectives(inHeader: false)#>
+<#
+        BeginNamespace(code);
+#>
+
+<#=codeStringGenerator.ServiceClassOpening(entity)#> 
+{
+    //context
+    private <#=code.Escape(container)#> _db = new <#=code.Escape(container)#>(); 
+
+	public void Dispose()
+	{
+		if (_db != null)
+		{
+			_db.Dispose();
+		}
+	}
+
+    #region <#=dbsetproperty#> CURD
+
+
+    //Read
+    public IEnumerable<<#=code.Escape(entity)#>> GetAll() 
+    {
+        var entities = _db.<#=dbsetproperty#>; 
+ 
+        return entities;
+
+    }
+
+    public void Detach(<#=code.Escape(entity)#> entity)
+    {
+        _db.Entry(entity).State = System.Data.Entity.EntityState.Detached;
+    }
+
+    public IEnumerable<<#=code.Escape(entity)#>> Get(Criteria<#=code.Escape(entity)#> criteria)
+    {
+        var entities = _db.<#=dbsetproperty#>.Where(<#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#>Criteria(criteria).SatisfiedBy());
+
+        return entities;
+
+    }
+
+	public IEnumerable<<#=code.Escape(entity)#>> Search(Criteria<#=code.Escape(entity)#> criteria)
+	{
+		var entities = _db.<#=dbsetproperty#>.Where(<#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#>SearchCriteria(criteria).SatisfiedBy());
+
+		return entities;
+
+	}
+
+	public IEnumerable<<#=code.Escape(entity)#>> Get(ISpecification<<#=code.Escape(entity)#>> spec)
+	{
+		var entities = _db.<#=dbsetproperty#>.Where(spec.SatisfiedBy());
+
+		return entities;
+
+	}
+
+    public <#=code.Escape(entity)#> Get(<#=codeStringGenerator.GetPropertyType(simpleProperties,id)#> id) 
+    {
+        var entity = _db.<#=dbsetproperty#>.SingleOrDefault(e=>e.<#=id#> == id);
+
+        return entity;
+
+    }
+
+
+
+    //Create
+    public void Create(<#=code.Escape(entity)#> model)
+    {
+
+            var entity = new <#=code.Escape(entity)#>
+            {
+<#
+    if (simpleProperties.Any())
+    {
+        foreach (var edmProperty in simpleProperties)
+        {
+#>
+                <#=codeStringGenerator.ObjectCreateFactory(edmProperty,"model")#> 
+<#
+        }
+    }
+#>
+            };
+
+            _db.<#=dbsetproperty#>.Add(entity);
+            _db.SaveChanges();
+            model.<#=id#> = entity.<#=id#>;
+        
+
+    }
+
+    public void Update(<#=code.Escape(entity)#> model)
+    {
+
+            var entity = new <#=code.Escape(entity)#>
+            {
+<#
+    if (simpleProperties.Any())
+    {
+        foreach (var edmProperty in simpleProperties)
+        {
+#>
+                <#=codeStringGenerator.ObjectFactory(edmProperty,"model")#>
+<#
+        }
+    }
+#>
+            };
+
+            _db.<#=dbsetproperty#>.Attach(entity);
+            _db.Entry(entity).State = System.Data.Entity.EntityState.Modified;
+            _db.SaveChanges();
+        
+    }
+
+    public void Destroy(<#=code.Escape(entity)#> model)
+    {
+
+            var entity = new <#=code.Escape(entity)#>
+            {
+<#
+    if (simpleProperties.Any())
+    {
+        foreach (var edmProperty in simpleProperties)
+        {
+#>
+                <#=codeStringGenerator.ObjectFactory(edmProperty,"model")#> 
+<#
+        }
+    }
+#>
+            };
+
+            _db.<#=dbsetproperty#>.Attach(entity);
+            _db.<#=dbsetproperty#>.Remove(entity);
+            _db.SaveChanges();
+    }
+
+    #endregion
+}
+<#
+    var propertiesWithDefaultValues = typeMapper.GetPropertiesWithDefaultValues(entity);
+    var collectionNavigationProperties = typeMapper.GetCollectionNavigationProperties(entity);
+    var complexProperties = typeMapper.GetComplexProperties(entity);
+
+
+    if (complexProperties.Any())
+    {
+#>
+
+<#
+        foreach(var complexProperty in complexProperties)
+        {
+#>
+
+<#
+        }
+    }
+
+    if (navigationProperties.Any())
+    {
+#>
+
+<#
+        foreach (var navigationProperty in navigationProperties)
+        { 
+#>
+    
+<#
+        }
+    }
+
+#>
+    
+
+<#
+        EndNamespace(code);
+
+}
+
+    fileManager.Process(CodeStringGenerator.ServicePath,"ServiceCurd.cs"); 
+
+#>
+<#+
+
+public void WriteHeader(CodeStringGenerator codeStringGenerator, EntityFrameworkTemplateFileManager fileManager)  
+{
+    fileManager.StartHeader(); 
+#>
+//------------------------------------------------------------------------------
+// <auto-generated>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine1")#>
+//
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine2")#>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine3")#>
+// </auto-generated>
+//------------------------------------------------------------------------------ 
+
+<#+
+    fileManager.EndBlock();
+}
+
+public void BeginNamespace(CodeGenerationTools code)
+{
+    var codeNamespace = code.VsNamespaceSuggestion();
+    if (!String.IsNullOrEmpty(codeNamespace))
+    {
+#>
+using System.Linq;
+using <#=CodeStringGenerator.Domain1Namespace#>;
+using Ewe.Infrastructure.Specification;
+
+namespace <#=CodeStringGenerator.ServiceNamespace#>
+{
+<#+
+        PushIndent("    ");
+    }
+}
+
+public void EndNamespace(CodeGenerationTools code)
+{
+    if (!String.IsNullOrEmpty(code.VsNamespaceSuggestion()))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+
+#>

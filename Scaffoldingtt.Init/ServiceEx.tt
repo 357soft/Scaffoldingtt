@@ -1,0 +1,208 @@
+﻿<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ include file="..\CodeGenerator.Core\Templates\base.tt"#><#@ 
+ output extension=".txt"#><#
+
+var textTransform = DynamicTextTransformation.Create(this); 
+var code = new CodeGenerationTools(this);
+var ef = new MetadataTools(this);
+var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
+var	fileManager = EntityFrameworkTemplateFileManager.Create(this);
+var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);
+var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
+var container = itemCollection.OfType<EntityContainer>().FirstOrDefault(); 
+
+//const  
+
+
+if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile)) 
+{
+    return string.Empty;  
+}
+
+    
+
+WriteHeader(codeStringGenerator, fileManager); 
+
+
+foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection))
+{
+        if(!codeStringGenerator.GenerateAll)
+        {
+        var founditem= codeStringGenerator.Allowed(entity.Name);
+
+        if(!founditem)
+            continue;
+        }
+
+        var dbsetproperty = code.Escape(entity);
+
+        var simpleProperties = typeMapper.GetSimpleProperties(entity, codeStringGenerator.GetEntityExcludedProperites(entity.Name));
+		var navigationProperties = typeMapper.GetNavigationProperties(entity);
+
+        foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+        {
+            if(typeMapper.GetTypeName(entitySet.ElementType) == code.Escape(entity))
+                dbsetproperty = code.Escape(entitySet);
+        }
+
+        var allowedclass = codeStringGenerator.GetAllowedClass(entity.Name);
+        var id = "Id";
+        var name = "Name";
+        if(allowedclass != null)
+        {
+            id = allowedclass.PropertyId;
+            name = allowedclass.PropertyName;
+        }
+
+        fileManager.StartNewFile(code.Escape(entity) + "ServiceEx.cs");
+#>
+<#=codeStringGenerator.UsingDirectives(inHeader: false)#>
+<#
+        BeginNamespace(code);
+#>
+
+<#=codeStringGenerator.ServiceClassOpening(entity)#> 
+{
+	public IEnumerable<<#=code.Escape(entity)#>> Search(string keyword)
+	{
+        Criteria<#=code.Escape(entity)#> criteria = new Criteria<#=code.Escape(entity)#>();
+<#
+        var whereclausefilter = string.Empty; 
+        var whereclausesearch = string.Empty; 
+    if (simpleProperties.Any()) 
+    {
+        foreach (var edmProperty in simpleProperties)  
+        {
+                var typenamestring = typeMapper.GetTypeName(edmProperty.TypeUsage); 
+
+                switch(typenamestring.ToLower())
+                {
+                    case "string":
+#>
+        criteria.<#=code.Escape(edmProperty)#> = keyword;
+<#
+                        whereclausefilter += string.Format("entity.{0}.Contains(keyword) {1} ",code.Escape(edmProperty),"&&");
+                        whereclausesearch += string.Format("entity.{0}.Contains(keyword) {1} ",code.Escape(edmProperty),"||");
+                        break;
+                    default:
+                        break;
+                }
+        }
+
+            whereclausefilter = whereclausefilter.TrimEnd().TrimEnd("&&".ToCharArray());
+            whereclausesearch = whereclausesearch.TrimEnd().TrimEnd("||".ToCharArray());
+    }
+#>
+        return Search(criteria);
+		//<#=whereclausefilter#>
+        //<#=whereclausesearch#>
+        //inner join
+		//var entities = from entity in _db.<#=dbsetproperty#>
+						//join fk in _db. on entity.Id equals fk. Id
+						//where entity.Name.Contains(keyword) || entity.Name.Contains(keyword)
+						//select entity;
+
+        //outer join
+		//var entities = from entity in _db.<#=dbsetproperty#>
+					//from fks in _db..Where(fk => fk.ProductId == entity.Id).DefaultIfEmpty()
+					//where fks.AliasName.Contains(keyword) || entity.Barcode.Contains(keyword) || entity.Name.Contains(keyword) || entity.NameCn.Contains(keyword) || entity.ImageUrl.Contains(keyword) || entity.ExactNameCn.Contains(keyword) || entity.Spec.Contains(keyword) 
+					//select entity;
+
+		//return entities.Distinct();
+
+	}
+
+
+}
+<#
+    var propertiesWithDefaultValues = typeMapper.GetPropertiesWithDefaultValues(entity);
+    var collectionNavigationProperties = typeMapper.GetCollectionNavigationProperties(entity);
+    var complexProperties = typeMapper.GetComplexProperties(entity);
+
+
+    if (complexProperties.Any())
+    {
+#>
+
+<#
+        foreach(var complexProperty in complexProperties)
+        {
+#>
+
+<#
+        }
+    }
+
+    if (navigationProperties.Any())
+    {
+#>
+
+<#
+        foreach (var navigationProperty in navigationProperties)
+        { 
+#>
+    
+<#
+        }
+    }
+
+#>
+    
+
+<#
+        EndNamespace(code);
+
+}
+
+    fileManager.Process(CodeStringGenerator.ServicePath,"ServiceEx.cs"); 
+
+#>
+<#+
+
+public void WriteHeader(CodeStringGenerator codeStringGenerator, EntityFrameworkTemplateFileManager fileManager)  
+{
+    fileManager.StartHeader(); 
+#>
+//------------------------------------------------------------------------------
+// <auto-generated>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine1")#>
+//
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine2")#>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine3")#>
+// </auto-generated>
+//------------------------------------------------------------------------------ 
+
+<#+
+    fileManager.EndBlock();
+}
+
+public void BeginNamespace(CodeGenerationTools code)
+{
+    var codeNamespace = code.VsNamespaceSuggestion();
+    if (!String.IsNullOrEmpty(codeNamespace))
+    {
+#>
+using System.Linq;
+using <#=CodeStringGenerator.Domain1Namespace#>;
+using Ewe.Infrastructure.Specification;
+
+namespace <#=CodeStringGenerator.ServiceNamespace#>
+{
+<#+
+        PushIndent("    ");
+    }
+}
+
+public void EndNamespace(CodeGenerationTools code)
+{
+    if (!String.IsNullOrEmpty(code.VsNamespaceSuggestion()))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+
+#>

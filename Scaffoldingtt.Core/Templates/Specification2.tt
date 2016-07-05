@@ -1,0 +1,288 @@
+﻿<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ include file="base.tt"#><#@ 
+ output extension=".txt"#><#
+
+var textTransform = DynamicTextTransformation.Create(this); 
+var code = new CodeGenerationTools(this);
+var ef = new MetadataTools(this);
+var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
+var	fileManager = EntityFrameworkTemplateFileManager.Create(this); 
+var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);
+var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
+var container = itemCollection.OfType<EntityContainer>().FirstOrDefault();
+
+//const
+
+
+if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile))  
+{
+    return string.Empty; 
+}
+
+    
+
+WriteHeader(codeStringGenerator, fileManager); 
+
+
+foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection)) 
+{
+        if(!codeStringGenerator.GenerateAll)
+        {
+        var founditem= codeStringGenerator.Allowed(entity.Name);
+
+        if(!founditem)
+            continue;
+        }
+
+        var dbsetproperty = code.Escape(entity);
+
+        var simpleProperties = typeMapper.GetSimpleProperties(entity, codeStringGenerator.GetEntityExcludedProperites(entity.Name)); 
+		var navigationProperties = typeMapper.GetNavigationProperties(entity);
+
+        foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+        {
+            if(typeMapper.GetTypeName(entitySet.ElementType) == code.Escape(entity))
+                dbsetproperty = code.Escape(entitySet);
+        }
+
+
+        fileManager.StartNewFile(code.Escape(entity) + "Specification.cs");
+#>
+<#=codeStringGenerator.UsingDirectives(inHeader: false)#>
+<#
+        BeginNamespace(code);
+#>
+
+<#=codeStringGenerator.SpecificationClassOpening(entity)#>
+{
+	public static ISpecification<<#=code.Escape(entity)#>> <#=code.Escape(entity)#>Criteria(Criteria<#=code.Escape(entity)#> criteria)
+    {
+		Specification<<#=code.Escape(entity)#>> specification = new DirectSpecification<<#=code.Escape(entity)#>>(); 
+
+<#
+    if (simpleProperties.Any()) 
+    {
+        foreach (var edmProperty in simpleProperties)  
+        {
+                var typenamestring = typeMapper.GetTypeName(edmProperty.TypeUsage); 
+
+                switch(typenamestring.ToLower())
+                {
+                    case "system.datetime":
+                    case "nullable<system.datetime>": 
+#>
+	    if (criteria.<#=code.Escape(edmProperty)#>Start != null && criteria.<#=code.Escape(edmProperty)#>End  != null)
+	    {
+
+		    specification &= <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(criteria.<#=code.Escape(edmProperty)#>Start, criteria.<#=code.Escape(edmProperty)#>End);
+	    }
+<#
+                        break;
+                    case "int":
+                    case "long":
+                    case "system.guid":
+                    case "bool":
+#>
+	    if (criteria.<#=code.Escape(edmProperty)#> != null)
+	    {
+			specification &= <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(criteria.<#=code.Escape(edmProperty)#>.Value);
+	    }
+<#
+                        break;
+                    default:
+                var ifstatementstring = codeStringGenerator.GetSpecificationIsNull(edmProperty);
+                if(!string.IsNullOrEmpty(ifstatementstring))
+                {       
+#>
+		if (<#=ifstatementstring#>) 
+		{
+			specification &= <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(criteria.<#=code.Escape(edmProperty)#>);
+		}
+<#
+                }
+                        break;
+                }
+        }
+    }
+#>
+        return <#=code.Escape(entity)#>CriteriaEx(specification, criteria);
+
+    }
+
+	public static ISpecification<<#=code.Escape(entity)#>> <#=code.Escape(entity)#>SearchCriteria(Criteria<#=code.Escape(entity)#> criteria)
+    {
+		Specification<<#=code.Escape(entity)#>> specification = new DirectSpecification<<#=code.Escape(entity)#>>(false); 
+
+<#
+    if (simpleProperties.Any()) 
+    {
+        foreach (var edmProperty in simpleProperties)  
+        {
+                var typenamestring = typeMapper.GetTypeName(edmProperty.TypeUsage); 
+
+                switch(typenamestring.ToLower())
+                {
+                    case "system.datetime":
+                    case "nullable<system.datetime>": 
+#>
+	    if (criteria.<#=code.Escape(edmProperty)#>Start != null && criteria.<#=code.Escape(edmProperty)#>End  != null)
+	    {
+		    specification |= <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(criteria.<#=code.Escape(edmProperty)#>Start, criteria.<#=code.Escape(edmProperty)#>End);
+	    }
+<#
+                        break;
+                    case "int":
+                    case "long":
+                    case "system.guid":
+                    case "bool":
+#>
+	    if (criteria.<#=code.Escape(edmProperty)#> != null)
+	    {
+			specification |= <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(criteria.<#=code.Escape(edmProperty)#>.Value);
+	    }
+<#
+                        break;
+                    default:
+                var ifstatementstring = codeStringGenerator.GetSpecificationIsNull(edmProperty);
+                if(!string.IsNullOrEmpty(ifstatementstring))
+                {       
+#>
+		if (<#=ifstatementstring#>)
+		{
+			specification |= <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(criteria.<#=code.Escape(edmProperty)#>);
+		}
+<#
+                }
+                        break;
+                }
+        }
+    }
+#>
+        return <#=code.Escape(entity)#>SearchCriteriaEx(specification, criteria);
+
+    }
+
+
+    #region <#=dbsetproperty#> Basic
+
+	public static Specification<<#=code.Escape(entity)#>> Default()
+	{
+		return new DirectSpecification<<#=code.Escape(entity)#>>(true); 
+	}
+
+<#
+    if (simpleProperties.Any())
+    {
+        foreach (var edmProperty in simpleProperties)
+        {
+            var typenamestring = typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+                switch(typenamestring.ToLower())
+                {
+                    case "system.datetime":
+                    case "nullable<system.datetime>": 
+#>
+	public static Specification<<#=code.Escape(entity)#>> <#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(DateTime? <#=code.Escape(edmProperty)#>Start, DateTime? <#=code.Escape(edmProperty)#>End)
+	{
+<#
+#>
+        var startDate = new DateTime(<#=code.Escape(edmProperty)#>Start.Value.Year, <#=code.Escape(edmProperty)#>Start.Value.Month, <#=code.Escape(edmProperty)#>Start.Value.Day, 0,0,0);
+        var endDate = new DateTime(<#=code.Escape(edmProperty)#>End.Value.Year, <#=code.Escape(edmProperty)#>End.Value.Month, <#=code.Escape(edmProperty)#>End.Value.Day, 23, 59, 59, 999);
+		return new DirectSpecification<<#=code.Escape(entity)#>>(s => s.<#=code.Escape(edmProperty)#> >= startDate && s.<#=code.Escape(edmProperty)#> <= endDate);  
+	}
+<#
+                        break;                    
+                    default:
+#>
+	public static Specification<<#=code.Escape(entity)#>> <#=code.Escape(entity)#><#=code.Escape(edmProperty)#>(<#=codeStringGenerator.GetPropertyType(simpleProperties,code.Escape(edmProperty))#> <#=code.Escape(edmProperty)#>)
+	{
+<#
+#>
+		return new DirectSpecification<<#=code.Escape(entity)#>>(s => s.<#=codeStringGenerator.GetSpecificationLamada(edmProperty)#>);  
+	}
+<#
+                        break;
+                }
+        }
+    } 
+#>
+
+    #endregion
+}
+
+    public partial class Criteria<#=code.Escape(entity)#> 
+    {
+<#
+    if (simpleProperties.Any())
+    {
+        foreach (var edmProperty in simpleProperties)
+        {
+#>
+        <#=codeStringGenerator.CriteriaProperty(edmProperty)#>
+<#
+        }
+    }
+
+#>
+    }
+
+    
+
+<#
+        EndNamespace(code);
+
+}
+
+    fileManager.Process(CodeStringGenerator.ServicePath,"Specification.cs");
+
+#>
+<#+
+
+public void WriteHeader(CodeStringGenerator codeStringGenerator, EntityFrameworkTemplateFileManager fileManager) 
+{
+    fileManager.StartHeader(); 
+#>
+//------------------------------------------------------------------------------
+// <auto-generated>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine1")#>
+//
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine2")#>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine3")#>
+// </auto-generated>
+//------------------------------------------------------------------------------ 
+
+<#+
+    fileManager.EndBlock();
+}
+
+public void BeginNamespace(CodeGenerationTools code)
+{
+    var codeNamespace = code.VsNamespaceSuggestion();
+    if (!String.IsNullOrEmpty(codeNamespace))
+    {
+#>
+using System.Linq;
+using System.Text;
+using <#=CodeStringGenerator.Domain1Namespace#>;
+using Ewe.Infrastructure.Specification;
+
+namespace <#=CodeStringGenerator.ServiceNamespace#>
+{
+<#+
+        PushIndent("    ");
+    }
+}
+
+public void EndNamespace(CodeGenerationTools code)
+{
+    if (!String.IsNullOrEmpty(code.VsNamespaceSuggestion()))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+
+#>

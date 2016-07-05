@@ -1,0 +1,1365 @@
+﻿<#@ template language="C#" #>
+<#@ include file="EF6.Utility.CS.ttinclude"#>
+<#@ include file="SettingsEwePmsPath.tt"#> 
+<#@  output extension=".txt"#>
+<#+ 
+
+
+public partial class CodeStringGenerator 
+{
+
+    public class AllowedClass
+    {
+        public AllowedClass()
+        {
+            NavigationProperties = new Dictionary<string, string>();
+        }
+
+        public string EntityName {get;set;}
+        public string[] ExcludeProperties{get;set;}
+        public string PropertyName {get;set;}
+        public string PropertyId {get;set;}
+        public Dictionary<string, string> NavigationProperties{get;set;}
+            
+    }
+
+    public bool Allowed(string name)
+    {
+        foreach(var i in AllowedArray1) 
+        {
+            if(i.EntityName == name)
+                return true;
+        }
+
+        return false;
+    }
+
+    public string[] GetEntityExcludedProperites(string name)
+    {
+
+        foreach(var i in AllowedArray1) 
+        {
+            if(i.EntityName == name)
+                return i.ExcludeProperties;
+        }
+
+            return new string[]{};
+    }
+
+    public string GetDbSetProperty(EntityContainer container,EntityType entity)
+    {
+        var dbsetproperty = _code.Escape(entity);
+
+        foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+        {
+            if(_typeMapper.GetTypeName(entitySet.ElementType) == _code.Escape(entity))
+                dbsetproperty = _code.Escape(entitySet);
+        } 
+
+        return dbsetproperty;
+    }
+
+
+    //Custom Code
+    public string ObjectFactory(EdmProperty edmProperty,string prefix = "entity") 
+    {
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} = {1}.{0},",
+                _code.Escape(edmProperty),prefix);
+    }
+
+    public string NavigationPropertyClone(NavigationProperty navProp,string prefix = "entity")
+    {
+        if(navProp.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "//{0} = {1}.{0}.Select(m=>m.CloneEntitySimple()).Take(request.PageSize),",
+                _code.Escape(navProp),prefix);
+        }
+        else
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} = {1}.{0}.CloneEntitySimple(),",
+                _code.Escape(navProp),prefix);
+        }
+
+    }
+    public string NavigationPropertyToViewModelSimple(NavigationProperty navProp,string prefix = "entity")
+    {
+        if(navProp.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many)
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "//{0} = {1}.{0}.Select(m=>m.ToViewModelSimple()).Take(request.PageSize),",
+                _code.Escape(navProp),prefix);
+        }
+        else
+        {
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0} = {1}.{0}.ToViewModelSimple(),",
+                _code.Escape(navProp),prefix);
+        }
+
+    }
+
+    public string NavigationPropertyToViewModel(NavigationProperty navProp,string prefix = "model")
+    {
+        if(navProp.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many)
+        {
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "//viewModel.{0} = {1}.{0}.Select(m=>m.ToViewModelSimple()).Take(request.PageSize);",
+                    _code.Escape(navProp),prefix);
+        }
+        else
+        {
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "viewModel.{0} = {1}.{0}.ToViewModelSimple();",
+                    _code.Escape(navProp),prefix);
+        }
+
+    }
+
+    public string GridColumnsProperty(EdmProperty edmProperty,string entityName)
+    {
+            if(_code.Escape(edmProperty).Equals( "Id", StringComparison.InvariantCultureIgnoreCase))
+                return string.Empty;
+            //if(_code.Escape(edmProperty).EndsWith("Id"))
+            //{
+                //var forginkey= _code.Escape(edmProperty).Replace("Id","");
+//
+                //var r = CheckKeywordProperty(forginkey,entityName);
+//
+                //return "{field: \"" + _code.Escape(edmProperty) +"\", title: \""+ forginkey +"\", width: \"100px\", editor: " + r +"DropDownEditor, template: function (data) {if (data." + forginkey + " != null)return data." + forginkey + ".Name;else return \"\";} },";
+            //}
+
+            foreach(var i in AllowedArray1) 
+            {
+                if(i.EntityName == entityName)
+                {
+                    string myValue;
+                    //if (_tags.TryGetValue(tag, out myValue))    
+                    if (i.NavigationProperties.TryGetValue(_code.Escape(edmProperty), out myValue)) 
+                    { 
+                        var currentForginkey = GetAllowedClass(myValue);
+                        //string myValue = i.NavigationProperties[_code.Escape(edmProperty)]; 
+                        var html= string.Format("{{field: \"{0}\",",_code.Escape(edmProperty));
+                        html += Environment.NewLine;
+                        html += string.Format("title: \"{0}\",",myValue);
+                        html += Environment.NewLine;
+                        html += string.Format("width: \"{0}\",","200px");
+                        //html += Environment.NewLine;
+                        //html += string.Format("editor: {0}DropDownEditor,",myValue);
+                        html += Environment.NewLine;
+                        html += string.Format("template: function (data) {{");
+                        html += Environment.NewLine;
+                        html += string.Format("if (data.{0} != null)",myValue);
+                        html += Environment.NewLine;
+                        html += string.Format("return data.{0}.{1};",myValue,currentForginkey.PropertyName);
+                        html += Environment.NewLine;
+                        //html += string.Format("else if (data.{0} != \"\" && data.{0} != null) {{",_code.Escape(edmProperty));
+                        //html += Environment.NewLine;
+                        //html += string.Format("return temp1;");
+                        //html += Environment.NewLine;
+                        //html += string.Format("}}");
+                        //html += Environment.NewLine;
+                        html += string.Format("else");
+                        html += Environment.NewLine;
+                        html += string.Format("return \"\";");
+                        html += Environment.NewLine;
+                        html += string.Format("}},");
+                        html += Environment.NewLine;
+                        html += string.Format("}},");
+                        return html;
+                    }
+                }
+            }
+
+                //, format: "{0:MM-dd-yyyy mm:hh:ss}"
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            switch(typenamestring.ToLower())
+            {
+                case "nullable<int>":
+                case "int":
+                    return "{field: \"" + _code.Escape(edmProperty) +"\" , format: \"{0:n0}\", width: \"100px\"},"; 
+                    break;
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    return "{field: \"" + _code.Escape(edmProperty) +"\" , format: \"{0:MM-dd-yyyy}\", width: \"100px\"},"; 
+                    break;
+                default:
+                    return "{field: \"" + _code.Escape(edmProperty) +"\", width: \"100px\"},"; 
+                    break;
+            }
+            return "{field: \"" + _code.Escape(edmProperty) +"\", width: \"100px\"},"; 
+
+    }
+
+    public string CuProperty(EdmProperty edmProperty,string entityName, string bindValue = "")
+    {
+
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+            var isNullable = IsNullable(typenamestring);
+
+            string isrequired = "";
+
+            if(!isNullable)
+                isrequired = "required";
+
+            foreach(var i in AllowedArray1) 
+            {
+                if(i.EntityName == entityName)
+                {
+                    string myValue;
+                    //if (_tags.TryGetValue(tag, out myValue))    
+                    if (i.NavigationProperties.TryGetValue(_code.Escape(edmProperty), out myValue)) 
+                    { 
+                        var currentForginkey = GetAllowedClass(myValue);
+                        //string myValue = i.NavigationProperties[_code.Escape(edmProperty)];
+
+                        var html= string.Format("<input id=\"{0}\" name=\"{0}\" data-role=\"combobox\" {1} />",_code.Escape(edmProperty),isrequired);
+                        return string.Format("<input type=\"text\" id=\"{0}\" name=\"{0}\" {1} validationmessage=\"Select {2}\" style=\"width: 100%;\">",_code.Escape(edmProperty),isrequired,myValue);
+
+
+                        return html;
+                    }
+                }
+            }
+
+                //, format: "{0:MM-dd-yyyy mm:hh:ss}"
+
+            switch(typenamestring.ToLower())
+            {
+                //case "nullable<int>":
+                //case "int":
+                    //kendoTypeName = "number";
+                    //break;
+                //case "nullable<decimal>":
+                //case "decimal":
+                    //kendoTypeName = "number";
+                    //break;
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    return string.Format("<input type=\"text\" id=\"{0}\" name=\"{0}\" {1} validationmessage=\"Select a date\" style=\"width: 100%;\">",_code.Escape(edmProperty),isrequired);
+                    break;
+                case "nullable<bool>":
+                case "bool":
+                    return string.Format("@Html.EditorFor(model => model.{0})",_code.Escape(edmProperty));
+                    break;
+                case "string":
+                    return string.Format("<input type=\"text\" id=\"{0}\" name=\"{0}\" class=\"k-textbox\" placeholder=\"{0}\" {1} validationmessage=\"Enter {0}\" style=\"width: 100%;\" value=\"{2}\" />",_code.Escape(edmProperty),isrequired,bindValue);
+                    break;
+                default:
+                    return string.Format("<input type=\"text\" id=\"{0}\" name=\"{0}\" class=\"k-textbox\" placeholder=\"{0}\" {1} validationmessage=\"Enter {0}\" style=\"width: 100%;\" value=\"{2}\" />",_code.Escape(edmProperty),isrequired,bindValue);
+                    break;
+            }
+
+    }
+
+    public string DrProperty(EdmProperty edmProperty,string entityName, string bindValue = "")
+    {
+
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+            var isNullable = IsNullable(typenamestring);
+
+            string isrequired = "";
+
+            if(!isNullable)
+                isrequired = "required";
+
+            foreach(var i in AllowedArray1) 
+            {
+                if(i.EntityName == entityName)
+                {
+                    string myValue;
+                    //if (_tags.TryGetValue(tag, out myValue))    
+                    if (i.NavigationProperties.TryGetValue(_code.Escape(edmProperty), out myValue)) 
+                    { 
+                        var currentForginkey = GetAllowedClass(myValue);
+                        //string myValue = i.NavigationProperties[_code.Escape(edmProperty)];
+
+                        return string.Format("<input disabled type=\"text\" id=\"{0}\" name=\"{0}\" {1} validationmessage=\"Select {2}\" style=\"width: 100%;\">",_code.Escape(edmProperty),isrequired,myValue);
+
+                    }
+                }
+            }
+
+                //, format: "{0:MM-dd-yyyy mm:hh:ss}"
+
+            switch(typenamestring.ToLower())
+            {
+                //case "nullable<int>":
+                //case "int":
+                    //kendoTypeName = "number";
+                    //break;
+                //case "nullable<decimal>":
+                //case "decimal":
+                    //kendoTypeName = "number";
+                    //break;
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    return string.Format("<input disabled type=\"text\" id=\"{0}\" name=\"{0}\" {1} validationmessage=\"Select a date\" style=\"width: 100%;\">",_code.Escape(edmProperty),isrequired);
+                    break;
+                case "nullable<bool>":
+                case "bool":
+
+                    bool flag;
+                    if(Boolean.TryParse(bindValue, out flag))
+                    {
+                        string checkboxvalue= string.Empty;
+                        if(flag)
+                            checkboxvalue = "checked='checked'";
+                        return string.Format("<input type=\"checkbox\" disabled name=\"{0}\" {1} />",_code.Escape(edmProperty),checkboxvalue);
+                    }
+                    else
+                    {
+                        return string.Empty;
+                    }
+                    //return string.Format("@Html.EditorFor(model => model.{0})",_code.Escape(edmProperty));
+                    break;
+                case "string":
+                    return string.Format("<input disabled type=\"text\" id=\"{0}\" name=\"{0}\" class=\"k-textbox\" placeholder=\"{0}\" {1} validationmessage=\"Enter {0}\" style=\"width: 100%;\" value=\"{2}\" />",_code.Escape(edmProperty),isrequired,bindValue);
+                    break;
+                default:
+                    return string.Format("<input disabled type=\"text\" id=\"{0}\" name=\"{0}\" class=\"k-textbox\" placeholder=\"{0}\" {1} validationmessage=\"Enter {0}\" style=\"width: 100%;\" value=\"{2}\" />",_code.Escape(edmProperty),isrequired,bindValue);
+                    break;
+            }
+
+    }
+
+
+    public string CheckKeywordProperty(string keyword,string entityName)
+    {
+        if(keyword.ToLower() == "parent")
+                    return entityName;
+
+        return keyword;
+    }
+
+    public IEnumerable<string> ForginKeys(IEnumerable<EdmProperty> simpleProperties,string entityName)
+        {
+            IList<string> results= new List<string>();
+            foreach (var edmProperty in simpleProperties)
+            {
+                if(_code.Escape(edmProperty) == "Id")
+                    continue;
+
+                if(_code.Escape(edmProperty).EndsWith("Id")) 
+                {
+                    var r = CheckKeywordProperty(_code.Escape(edmProperty).Replace("Id",""),entityName);
+
+                    results.Add(r);
+                }
+            }
+
+            return results;
+        }
+            
+        public Dictionary<string,string> ForginKeys(string entityName)
+        {
+            foreach(var i in AllowedArray1) 
+            {
+                if(i.EntityName == entityName)
+                {
+                    return i.NavigationProperties;
+                }
+            }
+
+            return null;
+        }
+
+        public AllowedClass GetAllowedClass(string entityName)
+        {
+            foreach(var i in AllowedArray1) 
+            {
+                if(i.EntityName == entityName)
+                {
+                    return i;
+                }
+            }
+
+            return null;
+        }
+
+
+//controller
+        public string BindString(IEnumerable<EdmProperty> simpleProperties)
+        {
+            var result= string.Empty;
+            foreach (var edmProperty in simpleProperties)
+            {
+                if(_code.Escape(edmProperty).Equals( "Id", StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+
+                result += string.Format("{0},",_code.Escape(edmProperty));
+
+            }
+
+            return result.TrimEnd(',');
+        }
+
+        public string AllSimplePropertiesString(IEnumerable<EdmProperty> simpleProperties)
+        {
+            var result= string.Empty;
+            foreach (var edmProperty in simpleProperties)
+            {
+                result += string.Format("{0},",_code.Escape(edmProperty));
+
+            }
+
+            return result.TrimEnd(',');
+        }
+
+        //views
+    public string CriteriaBuilder(EdmProperty edmProperty)
+    {
+            if(_code.Escape(edmProperty) == "Id")
+                return string.Empty;
+
+
+
+            var result = string.Empty;
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            switch(typenamestring.ToLower())
+            {
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    result = string.Format("<div class=\"col-md-3\"><h4>{0}</h4><input id=\"{0}Start\"  style=\"width: 50%\"><input id=\"{0}End\" style=\"width: 50%\"></div>",_code.Escape(edmProperty));
+                    break;
+                default:
+                    result = string.Format("<div class=\"col-md-3\"><h4>{0}</h4><input id=\"{0}\" class=\"form-control\" style=\"width: 80%;max-width:280px;\"></div>",_code.Escape(edmProperty));
+                    break;
+            }
+
+            return result;
+
+    }
+
+    public string InitCriteriaControls(EdmProperty edmProperty)
+    {
+
+            var result = string.Empty;
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            switch(typenamestring.ToLower())
+            {
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    result = string.Format("$(\"#{0}End\").kendoDatePicker({{format: \"yyyy/MM/dd\",value: ''@*new Date()*@}});",_code.Escape(edmProperty));
+                    result += string.Format("$(\"#{0}Start\").kendoDatePicker({{format: \"yyyy/MM/dd\",value: ''@*addDaysToDate(new Date(), -6)*@}});",_code.Escape(edmProperty));
+                    break;
+                default:
+                    //result = string.Format("<div class=\"col-md-3\"><h4>{0}</h4><input id=\"{0}\" class=\"form-control\" style=\"width: 80%\"></div>",_code.Escape(edmProperty));
+                    break;
+            }
+
+            return result;
+
+    }
+
+    public string InitCuControls(EdmProperty edmProperty, string bindValue = "")
+    {
+
+            var result = string.Empty;
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            switch(typenamestring.ToLower())
+            {
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    result = string.Format("$(\"#{0}\").kendoDatePicker({{format: \"yyyy/MM/dd\",value: '{1}'}});",_code.Escape(edmProperty),bindValue);
+                    break;
+                default:
+                    //result = string.Format("<div class=\"col-md-3\"><h4>{0}</h4><input id=\"{0}\" class=\"form-control\" style=\"width: 80%\"></div>",_code.Escape(edmProperty));
+                    break;
+            }
+
+            return result;
+
+    }
+
+        //Code: $("#Code").val(),
+    public string AdditionalBuilder(EdmProperty edmProperty)
+    {
+            if(_code.Escape(edmProperty) == "Id")
+                return string.Empty;
+
+            //<div class=\"col-md-3\"><h4>weight</h4><input id=\"weight\" style=\"width: 80%\"></div>
+            //<div class=\"col-md-3\"><h4>inboundTime</h4><input id=\"inboundTimeStart\" value=\"02/20/2016\" style=\"width: 50%\"><input id=\"inboundTimeEnd\" value=\"02/26/2016\" style=\"width: 50%\"></div>
+
+
+            var result = string.Empty;
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            switch(typenamestring.ToLower())
+            {
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    result = string.Format("{0}Start: $(\"#{0}Start\").val(),",_code.Escape(edmProperty));
+                    result += Environment.NewLine;
+                    result += string.Format("{0}End: $(\"#{0}End\").val(),",_code.Escape(edmProperty));
+                    break;
+                default:
+                    result = string.Format("{0}: $(\"#{0}\").val(),",_code.Escape(edmProperty));
+                    break;
+            }
+
+            return result;
+
+    }
+    public string DataSourceSchemaModelFieldsProperty(EdmProperty edmProperty)
+    {
+            if(_code.Escape(edmProperty) == "Id")
+                return string.Empty;
+            //if(_code.Escape(edmProperty).EndsWith("Id"))
+            //{
+                //var forginkey= _code.Escape(edmProperty).Replace("Id","");
+                //return "{field: " + _code.Escape(edmProperty) +"}, title: \""+ forginkey +"\", width: \"100px\", editor: " + forginkey +"DropDownEditor, template: \"#=" + forginkey + ".Name#\" },";
+            //}
+                //
+
+            var result = _code.Escape(edmProperty) + " : {";
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            var kendoTypeName= string.Empty;
+
+
+            if(typenamestring.EndsWith("?"))
+            {
+                result += " nullable: true,";
+                //kendoTypeName= typenamestring.Replace("?","");
+            }
+
+            if(typenamestring.StartsWith("Nullable<"))
+            {
+                result += " nullable: true,";
+                //kendoTypeName= typenamestring.Replace("Nullable<","");
+                //kendoTypeName = kendoTypeName.Replace(">","");
+            }
+
+            switch(typenamestring.ToLower())
+            {
+                case "nullable<int>":
+                case "int":
+                    kendoTypeName = "number";
+                    break;
+                case "nullable<decimal>":
+                case "decimal":
+                    kendoTypeName = "number";
+                    break;
+                case "nullable<system.datetime>":
+                case "system.datetime":
+                    kendoTypeName = "date";
+                    break;
+                case "nullable<bool>":
+                case "bool":
+                    kendoTypeName = "boolean";
+                    break;
+                default:
+                    kendoTypeName = "string";
+                    break;
+            }
+
+            result += " type: \"" + kendoTypeName + "\"},";
+
+            return result;
+
+    }
+        public string GirdSaveFormatJsDate(EdmProperty edmProperty)
+        {
+                if(_code.Escape(edmProperty) == "Id")
+                    return string.Empty;
+
+            var result = string.Empty;
+                var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+
+                switch(typenamestring.ToLower())
+                {
+                    case "nullable<int>":
+                    case "int":
+                        break;
+                    case "nullable<decimal>":
+                    case "decimal":
+                        break;
+                    case "nullable<system.datetime>":
+                    case "system.datetime":
+                    result =  string.Format("if (e.model.{0} != null && e.model.{0} != \"\")",_code.Escape(edmProperty));
+                    result += Environment.NewLine;
+                    result += string.Format("e.model.{0} = kendo.toString(new Date(e.model.{0}), \"yyyy-MM-dd\");",_code.Escape(edmProperty));
+                        break;
+                    case "nullable<bool>":
+                    case "bool":
+
+                        break;
+                    default:
+                        break;
+                }
+
+
+                return result;
+
+        }
+//
+        //public string SetDefaultIdValue(IEnumerable<EdmProperty> simpleProperties)
+        //{
+                //switch(typenamestring.ToLower())
+                //{
+                    //case "nullable<int>":
+                    //case "int":
+                        //break;
+                    //case "nullable<decimal>":
+                    //case "decimal":
+                        //break;
+                    //case "nullable<system.datetime>":
+                    //case "system.datetime":
+                    //result =  string.Format("if (e.model.{0} != null && e.model.{0} != \"\")",_code.Escape(edmProperty));
+                    //result += Environment.NewLine;
+                    //result += string.Format("e.model.{0} = kendo.toString(new Date(e.model.{0}), \"yyyy-MM-dd\");",_code.Escape(edmProperty));
+                        //break;
+                    //case "nullable<bool>":
+                    //case "bool":
+//
+                        //break;
+                    //default:
+                        //break;
+                //}
+//
+            //return GetPropertyType(simpleProperties);
+        //
+        //}
+
+        public string GetIdType(IEnumerable<EdmProperty> simpleProperties)
+        {
+            
+            return GetPropertyType(simpleProperties);
+        
+        }
+
+        public string GetPropertyType(IEnumerable<EdmProperty> simpleProperties,string name = "Id")
+        {
+            if (simpleProperties.Any())
+            {
+                foreach (var edmProperty in simpleProperties)
+                {
+                    if(_code.Escape(edmProperty).ToLower() == name.ToLower())
+                    {
+                        var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+                        
+                        return typenamestring;
+                    }
+
+                }
+            }
+            return "Guid";
+        
+        }
+
+        public string ObjectCreateFactory(EdmProperty edmProperty,string prefix = "entity")
+        {
+            if(_code.Escape(edmProperty) == "Id")
+            {
+                var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+                switch(typenamestring)
+                {
+                    case "System.Guid":
+                    return string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0} = Guid.NewGuid(),",
+                        _code.Escape(edmProperty));
+                        break;
+                    case "string":
+                    return string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0} = Guid.NewGuid().ToString(),",
+                        _code.Escape(edmProperty));
+                        break;
+                    case "int":
+                    case "long":
+                    default:
+                        return string.Empty;
+                }
+            }
+            else
+            {
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} = {1}.{0},",
+                    _code.Escape(edmProperty),prefix);
+            }
+        }
+
+    public string ServiceClassOpening(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1}partial class {2}Service : IDisposable",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity));
+    }
+
+        //specification
+    public string GetSpecificationLamada(EdmProperty edmProperty)
+    {
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            var kendoTypeName= typenamestring;
+
+
+            switch(kendoTypeName)
+            {
+                case "string":
+                    return _code.Escape(edmProperty) + ".Contains(" + _code.Escape(edmProperty) + ")";
+                default:
+                    return _code.Escape(edmProperty) + " == " + _code.Escape(edmProperty) + "";
+            }
+
+    }
+
+    private bool IsNullable(string typeName)
+    {
+        if(typeName.Contains("?"))
+            return true;
+        if(typeName.StartsWith("Nullable"))
+            return true;
+
+        return false;
+    }
+    public string GetSpecificationIsNull(EdmProperty edmProperty)
+    {
+            var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+            var kendoTypeName= typenamestring;
+
+            if(IsNullable(typenamestring))
+                return string.Format("criteria.{0} != null",_code.Escape(edmProperty));
+
+            switch(kendoTypeName.ToLower())
+            {
+                case "string":
+                    return string.Format("!string.IsNullOrEmpty(criteria.{0})",_code.Escape(edmProperty));
+                default:
+                    return string.Empty;
+            }
+
+    }
+    public string DomainClassOpening(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1} partial class {2}",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity));
+    }
+    public string ViewModelClassOpening(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1} partial class {2}ViewModel",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity));
+    }
+    public string SpecificationClassOpening(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1}static partial class {2}Specification",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity));
+    }
+    public string ControllerClassOpening(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1}partial class {2}Controller : Controller",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity));
+    }
+
+    public string ControllerClassOpeningPartial2(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1}partial class {2}Controller",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity));
+    }
+    //extension
+    public string ExtensionProperty(EdmProperty edmProperty)
+    {
+	    //set value
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} = model.{0},",
+            _code.Escape(edmProperty));
+    }
+
+    public string CriteriaProperty(EdmProperty edmProperty)
+    {
+        var typenamestring = _typeMapper.GetTypeName(edmProperty.TypeUsage);
+
+        var kendoTypeName= typenamestring;
+
+
+            //int,long,guid,bool
+        switch(kendoTypeName.ToLower())
+        {
+            case "system.datetime":
+                    return string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0} {1}? {2}Start {{ {3}get; {4}set; }} {5} {0} {1}? {2}End {{ {3}get; {4}set; }}",
+                        Accessibility.ForProperty(edmProperty),
+                        _typeMapper.GetTypeName(edmProperty.TypeUsage),
+                        _code.Escape(edmProperty),
+                        _code.SpaceAfter(Accessibility.ForGetter(edmProperty)),
+                        _code.SpaceAfter(Accessibility.ForSetter(edmProperty)),Environment.NewLine);     
+            case "nullable<system.datetime>":
+                    return string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0} {1} {2}Start {{ {3}get; {4}set; }} {5} {0} {1} {2}End {{ {3}get; {4}set; }}",
+                        Accessibility.ForProperty(edmProperty),
+                        _typeMapper.GetTypeName(edmProperty.TypeUsage),
+                        _code.Escape(edmProperty),
+                        _code.SpaceAfter(Accessibility.ForGetter(edmProperty)),
+                        _code.SpaceAfter(Accessibility.ForSetter(edmProperty)),Environment.NewLine);                      
+            case "int":
+            case "long":
+            case "system.guid":
+            case "bool":
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} {1}? {2} {{ {3}get; {4}set; }}",
+                    Accessibility.ForProperty(edmProperty),
+                    _typeMapper.GetTypeName(edmProperty.TypeUsage),
+                    _code.Escape(edmProperty),
+                    _code.SpaceAfter(Accessibility.ForGetter(edmProperty)),
+                    _code.SpaceAfter(Accessibility.ForSetter(edmProperty)));  
+            default:
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} {1} {2} {{ {3}get; {4}set; }}",
+                    Accessibility.ForProperty(edmProperty),
+                    _typeMapper.GetTypeName(edmProperty.TypeUsage),
+                    _code.Escape(edmProperty),
+                    _code.SpaceAfter(Accessibility.ForGetter(edmProperty)),
+                    _code.SpaceAfter(Accessibility.ForSetter(edmProperty)));
+        }
+
+
+    }
+
+    public string NavigationPropertyViewModel(NavigationProperty navProp)
+    {
+        var endType = _typeMapper.GetTypeName(navProp.ToEndMember.GetEntityType()) + "ViewModel";
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1} {2} {{ {3}get; {4}set; }}",
+            AccessibilityAndVirtual(Accessibility.ForNavigationProperty(navProp)),
+            navProp.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many ? ("IEnumerable<" + endType + ">") : endType,
+            _code.Escape(navProp),
+            _code.SpaceAfter(Accessibility.ForGetter(navProp)),
+            _code.SpaceAfter(Accessibility.ForSetter(navProp)));
+    }
+
+    private readonly CodeGenerationTools _code;
+    private readonly TypeMapper _typeMapper;
+    private readonly MetadataTools _ef;
+
+    public CodeStringGenerator(CodeGenerationTools code, TypeMapper typeMapper, MetadataTools ef)
+    {
+        ArgumentNotNull(code, "code");
+        ArgumentNotNull(typeMapper, "typeMapper");
+        ArgumentNotNull(ef, "ef");
+
+        _code = code;
+        _typeMapper = typeMapper;
+        _ef = ef;
+    }
+
+    public string Property(EdmProperty edmProperty)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1} {2} {{ {3}get; {4}set; }}",
+            Accessibility.ForProperty(edmProperty),
+            _typeMapper.GetTypeName(edmProperty.TypeUsage),
+            _code.Escape(edmProperty),
+            _code.SpaceAfter(Accessibility.ForGetter(edmProperty)),
+            _code.SpaceAfter(Accessibility.ForSetter(edmProperty)));
+    }
+
+    public string NavigationProperty(NavigationProperty navProp)
+    {
+        var endType = _typeMapper.GetTypeName(navProp.ToEndMember.GetEntityType());
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1} {2} {{ {3}get; {4}set; }}",
+            AccessibilityAndVirtual(Accessibility.ForNavigationProperty(navProp)),
+            navProp.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many ? ("ICollection<" + endType + ">") : endType,
+            _code.Escape(navProp),
+            _code.SpaceAfter(Accessibility.ForGetter(navProp)),
+            _code.SpaceAfter(Accessibility.ForSetter(navProp)));
+    }
+    
+    public string AccessibilityAndVirtual(string accessibility)
+    {
+        return accessibility + (accessibility != "private" ? " virtual" : "");
+    }
+    
+    public string EntityClassOpening(EntityType entity)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1}partial class {2}{3}",
+            Accessibility.ForType(entity),
+            _code.SpaceAfter(_code.AbstractOption(entity)),
+            _code.Escape(entity),
+            _code.StringBefore(" : ", _typeMapper.GetTypeName(entity.BaseType)));
+    }
+    
+    public string EnumOpening(SimpleType enumType)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} enum {1} : {2}",
+            Accessibility.ForType(enumType),
+            _code.Escape(enumType),
+            _code.Escape(_typeMapper.UnderlyingClrType(enumType)));
+        }
+    
+    public void WriteFunctionParameters(EdmFunction edmFunction, Action<string, string, string, string> writeParameter)
+    {
+        var parameters = FunctionImportParameter.Create(edmFunction.Parameters, _code, _ef);
+        foreach (var parameter in parameters.Where(p => p.NeedsLocalVariable))
+        {
+            var isNotNull = parameter.IsNullableOfT ? parameter.FunctionParameterName + ".HasValue" : parameter.FunctionParameterName + " != null";
+            var notNullInit = "new ObjectParameter(\"" + parameter.EsqlParameterName + "\", " + parameter.FunctionParameterName + ")";
+            var nullInit = "new ObjectParameter(\"" + parameter.EsqlParameterName + "\", typeof(" + TypeMapper.FixNamespaces(parameter.RawClrTypeName) + "))";
+            writeParameter(parameter.LocalVariableName, isNotNull, notNullInit, nullInit);
+        }
+    }
+    
+    public string ComposableFunctionMethod(EdmFunction edmFunction, string modelNamespace)
+    {
+        var parameters = _typeMapper.GetParameters(edmFunction);
+        
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} IQueryable<{1}> {2}({3})",
+            AccessibilityAndVirtual(Accessibility.ForMethod(edmFunction)),
+            _typeMapper.GetTypeName(_typeMapper.GetReturnType(edmFunction), modelNamespace),
+            _code.Escape(edmFunction),
+            string.Join(", ", parameters.Select(p => TypeMapper.FixNamespaces(p.FunctionParameterType) + " " + p.FunctionParameterName).ToArray()));
+    }
+    
+    public string ComposableCreateQuery(EdmFunction edmFunction, string modelNamespace)
+    {
+        var parameters = _typeMapper.GetParameters(edmFunction);
+        
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<{0}>(\"[{1}].[{2}]({3})\"{4});",
+            _typeMapper.GetTypeName(_typeMapper.GetReturnType(edmFunction), modelNamespace),
+            edmFunction.NamespaceName,
+            edmFunction.Name,
+            string.Join(", ", parameters.Select(p => "@" + p.EsqlParameterName).ToArray()),
+            _code.StringBefore(", ", string.Join(", ", parameters.Select(p => p.ExecuteParameterName).ToArray())));
+    }
+    
+    public string FunctionMethod(EdmFunction edmFunction, string modelNamespace, bool includeMergeOption)
+    {
+        var parameters = _typeMapper.GetParameters(edmFunction);
+        var returnType = _typeMapper.GetReturnType(edmFunction);
+
+        var paramList = String.Join(", ", parameters.Select(p => TypeMapper.FixNamespaces(p.FunctionParameterType) + " " + p.FunctionParameterName).ToArray());
+        if (includeMergeOption)
+        {
+            paramList = _code.StringAfter(paramList, ", ") + "MergeOption mergeOption";
+        }
+
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} {1} {2}({3})",
+            AccessibilityAndVirtual(Accessibility.ForMethod(edmFunction)),
+            returnType == null ? "int" : "ObjectResult<" + _typeMapper.GetTypeName(returnType, modelNamespace) + ">",
+            _code.Escape(edmFunction),
+            paramList);
+    }
+    
+    public string ExecuteFunction(EdmFunction edmFunction, string modelNamespace, bool includeMergeOption)
+    {
+        var parameters = _typeMapper.GetParameters(edmFunction);
+        var returnType = _typeMapper.GetReturnType(edmFunction);
+
+        var callParams = _code.StringBefore(", ", String.Join(", ", parameters.Select(p => p.ExecuteParameterName).ToArray()));
+        if (includeMergeOption)
+        {
+            callParams = ", mergeOption" + callParams;
+        }
+        
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction{0}(\"{1}\"{2});",
+            returnType == null ? "" : "<" + _typeMapper.GetTypeName(returnType, modelNamespace) + ">",
+            edmFunction.Name,
+            callParams);
+    }
+    
+    public string DbSet(EntitySet entitySet)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0} virtual DbSet<{1}> {2} {{ get; set; }}",
+            Accessibility.ForReadOnlyProperty(entitySet),
+            _typeMapper.GetTypeName(entitySet.ElementType),
+            _code.Escape(entitySet));
+    }
+
+    public string UsingDirectives(bool inHeader, bool includeCollections = true)
+    {
+        return inHeader == string.IsNullOrEmpty(_code.VsNamespaceSuggestion())
+            ? string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}using System;{1}" +
+                "{2}",
+                inHeader ? Environment.NewLine : "",
+                includeCollections ? (Environment.NewLine + "using System.Collections.Generic;") : "",
+                inHeader ? "" : Environment.NewLine)
+            : "";
+    }
+}
+
+public class TypeMapper
+{
+    public IEnumerable<EdmProperty> GetSimpleProperties(EntityType type, string[] excludeProtities)
+    {
+            var simpleproperties = GetSimpleProperties(type);
+            List<EdmProperty> results= new List<EdmProperty>();
+            results.AddRange(simpleproperties);
+            foreach (var edmProperty in simpleproperties)
+            {
+                foreach(var p in excludeProtities)
+                {
+                    if(_code.Escape(edmProperty) == p)
+                    {
+                        results.Remove(edmProperty);
+                        break;
+                    }
+
+                }
+            }
+
+            return results;
+    }
+
+
+    private const string ExternalTypeNameAttributeName = @"http://schemas.microsoft.com/ado/2006/04/codegeneration:ExternalTypeName";
+
+    private readonly System.Collections.IList _errors;
+    private readonly CodeGenerationTools _code;
+    private readonly MetadataTools _ef;
+
+    public TypeMapper(CodeGenerationTools code, MetadataTools ef, System.Collections.IList errors)
+    {
+        ArgumentNotNull(code, "code");
+        ArgumentNotNull(ef, "ef");
+        ArgumentNotNull(errors, "errors");
+
+        _code = code;
+        _ef = ef;
+        _errors = errors;
+    }
+
+    public static string FixNamespaces(string typeName)
+    {
+        return typeName.Replace("System.Data.Spatial.", "System.Data.Entity.Spatial.");
+    }
+
+    public string GetTypeName(TypeUsage typeUsage)
+    {
+        return typeUsage == null ? null : GetTypeName(typeUsage.EdmType, _ef.IsNullable(typeUsage), modelNamespace: null);
+    }
+
+    public string GetTypeName(EdmType edmType)
+    {
+        return GetTypeName(edmType, isNullable: null, modelNamespace: null);
+    }
+
+    public string GetTypeName(TypeUsage typeUsage, string modelNamespace)
+    {
+        return typeUsage == null ? null : GetTypeName(typeUsage.EdmType, _ef.IsNullable(typeUsage), modelNamespace);
+    }
+
+    public string GetTypeName(EdmType edmType, string modelNamespace)
+    {
+        return GetTypeName(edmType, isNullable: null, modelNamespace: modelNamespace);
+    }
+
+    public string GetTypeName(EdmType edmType, bool? isNullable, string modelNamespace)
+    {
+        if (edmType == null)
+        {
+            return null;
+        }
+
+        var collectionType = edmType as CollectionType;
+        if (collectionType != null)
+        {
+            return String.Format(CultureInfo.InvariantCulture, "ICollection<{0}>", GetTypeName(collectionType.TypeUsage, modelNamespace));
+        }
+
+        var typeName = _code.Escape(edmType.MetadataProperties
+                                .Where(p => p.Name == ExternalTypeNameAttributeName)
+                                .Select(p => (string)p.Value)
+                                .FirstOrDefault())
+            ?? (modelNamespace != null && edmType.NamespaceName != modelNamespace ?
+                _code.CreateFullName(_code.EscapeNamespace(edmType.NamespaceName), _code.Escape(edmType)) :
+                _code.Escape(edmType));
+
+        if (edmType is StructuralType)
+        {
+            return typeName;
+        }
+
+        if (edmType is SimpleType)
+        {
+            var clrType = UnderlyingClrType(edmType);
+            if (!IsEnumType(edmType))
+            {
+                typeName = _code.Escape(clrType);
+            }
+
+            typeName = FixNamespaces(typeName);
+
+            return clrType.IsValueType && isNullable == true ?
+                String.Format(CultureInfo.InvariantCulture, "Nullable<{0}>", typeName) :
+                typeName;
+        }
+
+        throw new ArgumentException("edmType");
+    }
+    
+    public Type UnderlyingClrType(EdmType edmType)
+    {
+        ArgumentNotNull(edmType, "edmType");
+
+        var primitiveType = edmType as PrimitiveType;
+        if (primitiveType != null)
+        {
+            return primitiveType.ClrEquivalentType;
+        }
+
+        if (IsEnumType(edmType))
+        {
+            return GetEnumUnderlyingType(edmType).ClrEquivalentType;
+        }
+
+        return typeof(object);
+    }
+    
+    public object GetEnumMemberValue(MetadataItem enumMember)
+    {
+        ArgumentNotNull(enumMember, "enumMember");
+        
+        var valueProperty = enumMember.GetType().GetProperty("Value");
+        return valueProperty == null ? null : valueProperty.GetValue(enumMember, null);
+    }
+    
+    public string GetEnumMemberName(MetadataItem enumMember)
+    {
+        ArgumentNotNull(enumMember, "enumMember");
+        
+        var nameProperty = enumMember.GetType().GetProperty("Name");
+        return nameProperty == null ? null : (string)nameProperty.GetValue(enumMember, null);
+    }
+
+    public System.Collections.IEnumerable GetEnumMembers(EdmType enumType)
+    {
+        ArgumentNotNull(enumType, "enumType");
+
+        var membersProperty = enumType.GetType().GetProperty("Members");
+        return membersProperty != null 
+            ? (System.Collections.IEnumerable)membersProperty.GetValue(enumType, null)
+            : Enumerable.Empty<MetadataItem>();
+    }
+    
+    public bool EnumIsFlags(EdmType enumType)
+    {
+        ArgumentNotNull(enumType, "enumType");
+        
+        var isFlagsProperty = enumType.GetType().GetProperty("IsFlags");
+        return isFlagsProperty != null && (bool)isFlagsProperty.GetValue(enumType, null);
+    }
+
+    public bool IsEnumType(GlobalItem edmType)
+    {
+        ArgumentNotNull(edmType, "edmType");
+
+        return edmType.GetType().Name == "EnumType";
+    }
+
+    public PrimitiveType GetEnumUnderlyingType(EdmType enumType)
+    {
+        ArgumentNotNull(enumType, "enumType");
+
+        return (PrimitiveType)enumType.GetType().GetProperty("UnderlyingType").GetValue(enumType, null);
+    }
+
+    public string CreateLiteral(object value)
+    {
+        if (value == null || value.GetType() != typeof(TimeSpan))
+        {
+            return _code.CreateLiteral(value);
+        }
+
+        return string.Format(CultureInfo.InvariantCulture, "new TimeSpan({0})", ((TimeSpan)value).Ticks);
+    }
+    
+    public bool VerifyCaseInsensitiveTypeUniqueness(IEnumerable<string> types, string sourceFile)
+    {
+        ArgumentNotNull(types, "types");
+        ArgumentNotNull(sourceFile, "sourceFile");
+        
+        var hash = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+        if (types.Any(item => !hash.Add(item)))
+        {
+            _errors.Add(
+                new CompilerError(sourceFile, -1, -1, "6023",
+                    String.Format(CultureInfo.CurrentCulture, CodeGenerationTools.GetResourceString("Template_CaseInsensitiveTypeConflict"))));
+            return false;
+        }
+        return true;
+    }
+    
+    public IEnumerable<SimpleType> GetEnumItemsToGenerate(IEnumerable<GlobalItem> itemCollection)
+    {
+        return GetItemsToGenerate<SimpleType>(itemCollection)
+            .Where(e => IsEnumType(e));
+    }
+    
+    public IEnumerable<T> GetItemsToGenerate<T>(IEnumerable<GlobalItem> itemCollection) where T: EdmType
+    {
+        return itemCollection
+            .OfType<T>()
+            .Where(i => !i.MetadataProperties.Any(p => p.Name == ExternalTypeNameAttributeName))
+            .OrderBy(i => i.Name);
+    }
+
+    public IEnumerable<string> GetAllGlobalItems(IEnumerable<GlobalItem> itemCollection)
+    {
+        return itemCollection
+            .Where(i => i is EntityType || i is ComplexType || i is EntityContainer || IsEnumType(i))
+            .Select(g => GetGlobalItemName(g));
+    }
+
+    public string GetGlobalItemName(GlobalItem item)
+    {
+        if (item is EdmType)
+        {
+            return ((EdmType)item).Name;
+        }
+        else
+        {
+            return ((EntityContainer)item).Name;
+        }
+    }
+
+    public IEnumerable<EdmProperty> GetSimpleProperties(EntityType type)
+    {
+        return type.Properties.Where(p => p.TypeUsage.EdmType is SimpleType && p.DeclaringType == type);
+    }
+    
+    public IEnumerable<EdmProperty> GetSimpleProperties(ComplexType type)
+    {
+        return type.Properties.Where(p => p.TypeUsage.EdmType is SimpleType && p.DeclaringType == type);
+    }
+    
+    public IEnumerable<EdmProperty> GetComplexProperties(EntityType type)
+    {
+        return type.Properties.Where(p => p.TypeUsage.EdmType is ComplexType && p.DeclaringType == type);
+    }
+    
+    public IEnumerable<EdmProperty> GetComplexProperties(ComplexType type)
+    {
+        return type.Properties.Where(p => p.TypeUsage.EdmType is ComplexType && p.DeclaringType == type);
+    }
+
+    public IEnumerable<EdmProperty> GetPropertiesWithDefaultValues(EntityType type)
+    {
+        return type.Properties.Where(p => p.TypeUsage.EdmType is SimpleType && p.DeclaringType == type && p.DefaultValue != null);
+    }
+    
+    public IEnumerable<EdmProperty> GetPropertiesWithDefaultValues(ComplexType type)
+    {
+        return type.Properties.Where(p => p.TypeUsage.EdmType is SimpleType && p.DeclaringType == type && p.DefaultValue != null);
+    }
+
+    public IEnumerable<NavigationProperty> GetNavigationProperties(EntityType type)
+    {
+        return type.NavigationProperties.Where(np => np.DeclaringType == type);
+    }
+    
+    public IEnumerable<NavigationProperty> GetCollectionNavigationProperties(EntityType type)
+    {
+        return type.NavigationProperties.Where(np => np.DeclaringType == type && np.ToEndMember.RelationshipMultiplicity == RelationshipMultiplicity.Many);
+    }
+    
+    public FunctionParameter GetReturnParameter(EdmFunction edmFunction)
+    {
+        ArgumentNotNull(edmFunction, "edmFunction");
+
+        var returnParamsProperty = edmFunction.GetType().GetProperty("ReturnParameters");
+        return returnParamsProperty == null
+            ? edmFunction.ReturnParameter
+            : ((IEnumerable<FunctionParameter>)returnParamsProperty.GetValue(edmFunction, null)).FirstOrDefault();
+    }
+
+    public bool IsComposable(EdmFunction edmFunction)
+    {
+        ArgumentNotNull(edmFunction, "edmFunction");
+
+        var isComposableProperty = edmFunction.GetType().GetProperty("IsComposableAttribute");
+        return isComposableProperty != null && (bool)isComposableProperty.GetValue(edmFunction, null);
+    }
+
+    public IEnumerable<FunctionImportParameter> GetParameters(EdmFunction edmFunction)
+    {
+        return FunctionImportParameter.Create(edmFunction.Parameters, _code, _ef);
+    }
+
+    public TypeUsage GetReturnType(EdmFunction edmFunction)
+    {
+        var returnParam = GetReturnParameter(edmFunction);
+        return returnParam == null ? null : _ef.GetElementType(returnParam.TypeUsage);
+    }
+    
+    public bool GenerateMergeOptionFunction(EdmFunction edmFunction, bool includeMergeOption)
+    {
+        var returnType = GetReturnType(edmFunction);
+        return !includeMergeOption && returnType != null && returnType.EdmType.BuiltInTypeKind == BuiltInTypeKind.EntityType;
+    }
+}
+
+public static void ArgumentNotNull<T>(T arg, string name) where T : class
+{
+    if (arg == null)
+    {
+        throw new ArgumentNullException(name);
+    }
+}
+
+#>

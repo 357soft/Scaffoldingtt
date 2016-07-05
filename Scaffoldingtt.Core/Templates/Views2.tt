@@ -1,0 +1,347 @@
+﻿<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ include file="base.tt"#><#@ 
+ output extension=".cshtml"#><#
+
+var textTransform = DynamicTextTransformation.Create(this);
+var code = new CodeGenerationTools(this); 
+var ef = new MetadataTools(this);
+var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
+var	fileManager = EntityFrameworkTemplateFileManager.Create(this);
+var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);  
+var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
+var container = itemCollection.OfType<EntityContainer>().FirstOrDefault();
+
+if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile)) 
+{
+    return string.Empty;
+}
+
+WriteHeader(codeStringGenerator, fileManager);
+
+foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection))
+{
+    if(!codeStringGenerator.GenerateAll)
+    {
+        var founditem= codeStringGenerator.Allowed(entity.Name); 
+
+        if(!founditem)
+            continue;
+    }
+
+    fileManager.StartNewFile(entity.Name + "IndexT.cshtml"); 
+
+    var dbsetproperty = codeStringGenerator.GetDbSetProperty(container,entity); 
+
+    foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+    {
+        if(typeMapper.GetTypeName(entitySet.ElementType) == code.Escape(entity))
+            dbsetproperty = code.Escape(entitySet);
+    }
+
+        var entityId = codeStringGenerator.GetAllowedClass(entity.Name).PropertyId;
+
+    var propertiesWithDefaultValues = typeMapper.GetPropertiesWithDefaultValues(entity); 
+    var collectionNavigationProperties = typeMapper.GetCollectionNavigationProperties(entity);
+
+    var simpleProperties = typeMapper.GetSimpleProperties(entity, codeStringGenerator.GetEntityExcludedProperites(entity.Name));  
+    if (simpleProperties.Any())
+    {
+#>
+@{
+    ViewBag.Title = ""; 
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@Html.Partial("~/Views/Shared/_criteria<#=entity.Name#>.cshtml")
+
+   <div class="container-fluid">
+        <div id="grid<#=entity.Name#>"></div>
+    </div>
+<div id="grid<#=entity.Name#>Editor"></div>
+<div id="window<#=entity.Name#>"></div>
+
+
+<script type="text/javascript">
+    function window<#=entity.Name#>_close(e) {
+        // close animation has finished playing
+        var grid = $("#grid<#=entity.Name#>").data("kendoGrid");
+        grid.pager.page(grid.dataSource.page());
+        //grid.dataSource.read();
+    }
+
+    function initGridEditor<#=entity.Name#>(url,title)
+    {
+        var grid3 = $("#grid<#=entity.Name#>Editor");
+        grid3.html('');
+        $("#window<#=entity.Name#>").data("kendoWindow").title(title);
+        $("#window<#=entity.Name#>").data("kendoWindow").content(grid3);
+        $("#window<#=entity.Name#>").data("kendoWindow").setOptions({
+            width: "420px",
+            height: "600px",
+        });
+        $("#window<#=entity.Name#>").data("kendoWindow").open().center();
+        $("#window<#=entity.Name#>").data("kendoWindow").unbind("close", window<#=entity.Name#>_close);
+
+        $("#window<#=entity.Name#>").data("kendoWindow").bind("close", window<#=entity.Name#>_close);
+
+        displayLoading('#grid<#=entity.Name#>Editor');
+        $('#grid<#=entity.Name#>Editor').load(url, function (responseText, textStatus, req) {
+            if (req.status != 200)
+            {
+                var errorhtml = '<div><h3>' + req.statusText + ' ' + req.status + '</h3></div>';
+                $('#grid<#=entity.Name#>Editor').html(errorhtml);
+            }
+            closeLoading('#grid<#=entity.Name#>Editor');
+        });
+
+        return true;
+    }
+    function DeletePanel<#=entity.Name#>(id) {
+        var url = "@Html.Raw(Url.Action("<#=entity.Name#>_Destroy", "<#=entity.Name#>"))?id=" + id;
+        return initGridEditor<#=entity.Name#>(url,'Delete');
+    }
+    function EditPanel<#=entity.Name#>(id) {
+        var url = "@Html.Raw(Url.Action("<#=entity.Name#>_Update", "<#=entity.Name#>"))?id=" + id;
+
+        return initGridEditor<#=entity.Name#>(url,'Edit');
+    }
+
+    function CreatePanel<#=entity.Name#>() {
+        var url = "@Html.Raw(Url.Action("<#=entity.Name#>_Create", "<#=entity.Name#>"))";
+        return initGridEditor<#=entity.Name#>(url,'Create');
+    }
+</script>
+
+<script type="text/x-kendo-template" id="template<#=entity.Name#>">
+    <div class="toolbar">
+        <input type="button" id="category" onclick="CreatePanel<#=entity.Name#>()" class="k-button k-button-icontext k-grid-add" value="Add New" style="width: 150px" />
+    </div>
+</script>
+
+<script>
+
+$(document).ready(function () {
+    $("#window<#=entity.Name#>").kendoWindow({
+        width: "380px",
+        height: "600px",
+        title: "Summary",
+        visible: false,
+    });
+    refreshGrid<#=entity.Name#>();
+
+
+});
+    function dataSourceView_error(args) {
+        if (args.errors) {
+            var grid = $("#grid<#=entity.Name#>").data("kendoGrid");
+            var validationTemplate = kendo.template($("#ValidationMessageTemplate").html());
+            grid.one("dataBinding", function (e) {
+                e.preventDefault();
+
+                $.each(args.errors, function (propertyName) {
+                    var renderedTemplate = validationTemplate({ field: propertyName, messages: this.errors });
+                    grid.editable.element.find(".k-edit-form-container").append(renderedTemplate);
+                });
+            });
+        }
+    };
+
+    function refreshGrid<#=entity.Name#>() {
+        if ($("#grid<#=entity.Name#>").text() == "") {
+
+//remove edit item using {editable: false} in datasorce schema 
+//add edit item using {hidden: true} in columns field
+    $("#grid<#=entity.Name#>").kendoGrid({
+        height: 680,
+        columns: [
+<#
+        foreach (var edmProperty in simpleProperties)
+        {
+#>
+            <#=codeStringGenerator.GridColumnsProperty(edmProperty,entity.Name)#> 
+<#
+        }
+#>
+            {
+                field: "Id",
+                title: "Editor",
+                width: 160,
+                template:
+                    function (data) { 
+                        return "<div style='min-width:160px;'><a class=\"k-button\" onclick=\"EditPanel<#=entity.Name#>('"+ data.<#=entityId#> +"')\">Edit</a><a class=\"k-button\" onclick=\"DeletePanel<#=entity.Name#>('"+ data.<#=entityId#> +"')\">Delete</a></div>";
+                    }
+            }
+        ],
+        toolbar: kendo.template($("#template<#=entity.Name#>").html()),
+        dataSource: {
+            type: "aspnetmvc-ajax", 
+            transport: {
+                read: {
+                     url: "@Html.Raw(Url.Action("<#=entity.Name#>ViewModel_Read", "<#=entity.Name#>"))", 
+                     data: additionalData, 
+
+                }, 
+                //create: {
+                    //type: "post",
+					//url: "<#=code.Escape(entity)#>_Create"
+				//},
+                //update: {
+                    //type: "post",
+					//url: "<#=code.Escape(entity)#>_Update"
+				//},
+				//destroy: {
+                    //type: "post",
+					//url: "<#=code.Escape(entity)#>_Destroy" 
+				//}
+			},
+            error: dataSourceView_error,//in the layout
+            schema: {
+                data: "Data",
+                total: "Total",
+                errors: "Errors",
+                model: {
+                    id: "<#=entityId#>",
+					fields: {
+<#
+        foreach (var edmProperty in simpleProperties) 
+        {
+#>
+                        <#=codeStringGenerator.DataSourceSchemaModelFieldsProperty(edmProperty)#>  
+<#
+        }
+#>
+					}
+                }
+            },
+            pageSize: 20,
+			serverPaging: true,
+			serverSorting: true,
+        },        
+        ////edit: grid_edit,
+        save: function (e) {
+            //if (!e.model.isNew()) {
+<#
+            foreach (var forginKeyDict in codeStringGenerator.ForginKeys(entity.Name))
+            {
+
+                var forginKey = forginKeyDict.Value; 
+                var forginKeyDbsetproperty = forginKey;
+
+                foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+                {
+                    if(typeMapper.GetTypeName(entitySet.ElementType) == forginKey)
+                        forginKeyDbsetproperty = code.Escape(entitySet);
+                }
+
+                var allowedclass = codeStringGenerator.GetAllowedClass(forginKey);
+                var id = "Id";
+                var name = "Name";
+                if(allowedclass != null)
+                {
+                    id = allowedclass.PropertyId;
+                    name = allowedclass.PropertyName;
+                }
+
+#>
+            e.model.<#=forginKey#> = null; 
+<#
+            }
+
+
+        foreach (var edmProperty in simpleProperties) 
+        {
+#>
+            <#=codeStringGenerator.GirdSaveFormatJsDate(edmProperty)#>  
+<#
+        }
+#>
+            e.container.find("#ErrorMessageDiv").remove();
+            //}
+        },
+        remove: function (e) {
+<#
+        foreach (var edmProperty in simpleProperties) 
+        {
+#>
+            <#=codeStringGenerator.GirdSaveFormatJsDate(edmProperty)#>  
+<#
+        }
+#>
+        },
+        pageable: true,
+        sortable: {
+            mode: "single",
+            allowUnsort: false
+        },
+        scrollable: true,
+
+    });
+        }
+        else {
+            var grid1 = $("#grid<#=entity.Name#>").data("kendoGrid");
+            grid1.dataSource.read();
+            //grid1.pager.page(1);
+        }
+
+        
+    }
+
+
+</script>
+<#
+    }
+
+
+
+
+}
+
+    fileManager.Process(CodeStringGenerator.ViewPath, "IndexT.cshtml");
+
+
+#>
+<#+
+
+public void WriteHeader(CodeStringGenerator codeStringGenerator, EntityFrameworkTemplateFileManager fileManager)
+{
+    fileManager.StartHeader();
+#>
+@*//------------------------------------------------------------------------------
+// <auto-generated>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine1")#>
+//
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine2")#>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine3")#>
+// </auto-generated>
+//------------------------------------------------------------------------------*@
+
+<#=codeStringGenerator.UsingDirectives(inHeader: true)#>
+<#+
+    fileManager.EndBlock();
+}
+
+public void BeginNamespace(CodeGenerationTools code)
+{
+    var codeNamespace = code.VsNamespaceSuggestion();
+    if (!String.IsNullOrEmpty(codeNamespace))
+    {
+#>
+namespace <#=code.EscapeNamespace(codeNamespace)#>
+{
+<#+
+        PushIndent("    ");
+    }
+}
+
+public void EndNamespace(CodeGenerationTools code)
+{
+    if (!String.IsNullOrEmpty(code.VsNamespaceSuggestion()))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+
+#>

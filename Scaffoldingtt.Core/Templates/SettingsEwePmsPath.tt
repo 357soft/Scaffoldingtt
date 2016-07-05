@@ -1,0 +1,106 @@
+﻿<#@ template language="C#" #>
+<#@ include file="SettingsEwePmsEntities.tt"#>
+<#@  output extension=".txt"#>
+<#+
+
+public const string TemplateId = "CSharp_DbContext_Types_EF6";
+
+const string inputFile = @"D:\Workplace\EWE.PMS\EWE.PMS.Data\model1.edmx";
+
+
+    public partial class CodeStringGenerator
+    {
+        ////ewe namespace
+        public static string ProjectNamespace = @"Ewe.Pms.Presentation.Web";
+        public static string ServiceNamespace = @"Ewe.Pms.Services";
+        public static string Domain1Namespace = @"Ewe.Pms.Domains";
+
+        public static string ProjectPath  = @"D:\Workplace\EWE.PMS\" + ProjectNamespace;
+        public static string ServiceParentPath  = @"D:\Workplace\EWE.PMS\" + ServiceNamespace;
+        public static string DataParentPath  = @"D:\Workplace\EWE.PMS\Ewe.Pms.Data";
+
+        //const string _area1name= "Charter";
+
+        public static string ControllerPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Controllers",ProjectPath);
+            }
+        }
+
+        public static string ViewPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Views",ProjectPath);
+            }
+        }
+
+        const string _area1name= "Admin";
+
+        public static string Area1ControllerPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Areas\{1}\Controllers",ProjectPath,_area1name);
+            }
+        }
+
+        public static string Area1ViewPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Areas\{1}\Views",ProjectPath,_area1name);
+            }
+        }
+
+        public static string CriteriaPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Views\Shared",ProjectPath,_area1name);
+            }
+        }
+
+        public static string WebControllerNamespace
+        {
+            get
+            {
+                return string.Format(@"{0}.Controllers",ProjectNamespace);  
+            }
+        }
+
+        public static string ServicePath
+        {
+            get
+            {
+                return string.Format(@"{0}",ServiceParentPath);
+            }
+        }
+
+        public static string ModelPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Models\Extensions",ProjectPath);
+            }
+        }
+
+        public static string ViewModelPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Models\",ProjectPath);
+            }
+        }
+
+        public static string DomainPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Domains\",DataParentPath);
+            }
+        }
+    }
+#>

@@ -1,0 +1,257 @@
+﻿<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ include file="base.tt"#>
+<#@ output extension=".txt"#><#
+
+var textTransform = DynamicTextTransformation.Create(this); 
+var code = new CodeGenerationTools(this);
+var ef = new MetadataTools(this);
+var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
+var	fileManager = EntityFrameworkTemplateFileManager.Create(this); 
+var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);
+var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
+var container = itemCollection.OfType<EntityContainer>().FirstOrDefault();
+
+//const 
+
+
+if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile)) 
+{
+    return string.Empty;  
+}
+
+WriteHeader(codeStringGenerator, fileManager);
+
+
+foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection))  
+{
+        if(!codeStringGenerator.GenerateAll)
+        {
+        var founditem= codeStringGenerator.Allowed(entity.Name);  
+
+        if(!founditem)
+            continue;
+        }
+
+        var dbsetproperty = codeStringGenerator.GetDbSetProperty(container,entity);
+
+        var simpleProperties = typeMapper.GetSimpleProperties(entity, codeStringGenerator.GetEntityExcludedProperites(entity.Name));
+		var navigationProperties = typeMapper.GetNavigationProperties(entity);
+
+        var allowedclass = codeStringGenerator.GetAllowedClass(entity.Name);
+        var id = "Id";
+        var name = "Name";
+        if(allowedclass != null)
+        {
+            id = allowedclass.PropertyId;
+            name = allowedclass.PropertyName;
+        }
+        fileManager.StartNewFile(code.Escape(entity) + "ControllerCurd.cs");  
+#>
+<#=codeStringGenerator.UsingDirectives(inHeader: false)#> 
+<#
+        BeginNamespace(code);
+#>
+
+<#=codeStringGenerator.ControllerClassOpening(entity)#>
+{
+    //context
+    private <#=code.Escape(entity)#>Service _<#=code.Escape(entity)#>Service = new <#=code.Escape(entity)#>Service();
+
+    #region <#=code.Escape(entity)#>
+
+    public ActionResult <#=code.Escape(entity)#>Index()
+    {
+        return View();
+    }
+    public ActionResult <#=code.Escape(entity)#>IndexT()
+    {
+        return View();
+    }
+    //Read for criteria query and return viewmodel
+    public ActionResult <#=code.Escape(entity)#>ViewModel_Read([DataSourceRequest]DataSourceRequest request, Criteria<#=code.Escape(entity)#> criteria) 
+    {
+        return <#=code.Escape(entity)#>_Read(request, <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#>Criteria(criteria));
+    }
+
+    //Read for criteria search and return viewmodels
+    public ActionResult <#=code.Escape(entity)#>ViewModel_Search([DataSourceRequest]DataSourceRequest request, Criteria<#=code.Escape(entity)#> criteria) 
+    {
+        return <#=code.Escape(entity)#>_Read(request, <#=code.Escape(entity)#>Specification.<#=code.Escape(entity)#>SearchCriteria(criteria));
+    }
+
+	private ActionResult <#=code.Escape(entity)#>_Read([DataSourceRequest]DataSourceRequest request, ISpecification<<#=code.Escape(entity)#>> spec)
+	{
+		//var entities = new PagedList<<#=code.Escape(entity)#>>(_<#=code.Escape(entity)#>Service.Get(spec), request.Page, request.PageSize);
+		//var result = new DataSourceResult();
+		//result.Data = entities.Select(entity => entity.ToViewModel());
+		//result.Total = entities.TotalCount;
+
+		var entities = _<#=code.Escape(entity)#>Service.Get(spec);
+
+		var result = entities.ToDataSourceResult(request, entity => entity.ToViewModel());
+
+		return new JsonResult
+		{
+			//MaxJsonLength = int.MaxValue,
+			Data = result,
+			JsonRequestBehavior = JsonRequestBehavior.AllowGet
+		};
+	}
+
+    //Create
+    [AcceptVerbs(HttpVerbs.Post)]
+    public ActionResult <#=code.Escape(entity)#>_Create([DataSourceRequest]DataSourceRequest request, [Bind(Include="<#=codeStringGenerator.BindString(simpleProperties)#>")]<#=code.Escape(entity)#> model)
+    {
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _<#=code.Escape(entity)#>Service.Create(model);  
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Create failed.", ex.Details());
+            }
+
+        }
+
+        return Json(new[] { model }.ToDataSourceResult(request, ModelState));
+    }
+	public ActionResult <#=code.Escape(entity)#>_Create(int index = 0)
+	{
+
+		return base.PartialView(new <#=code.Escape(entity)#>ViewModel() { ViewModelIndex = index });
+	}
+	public ActionResult <#=code.Escape(entity)#>_Update(<#=codeStringGenerator.GetPropertyType(simpleProperties,id)#> id, int index = 0)
+	{
+		var entity = this._<#=code.Escape(entity)#>Service.Get(id);
+        
+		var model = entity.ToViewModel();
+		model.ViewModelIndex = index;
+		return base.PartialView(model);
+	}
+	public ActionResult <#=code.Escape(entity)#>_Destroy(<#=codeStringGenerator.GetPropertyType(simpleProperties,id)#> id, int index = 0)
+	{
+		var entity = this._<#=code.Escape(entity)#>Service.Get(id);
+        
+		var model = entity.ToViewModel();
+		model.ViewModelIndex = index;
+		return base.PartialView(model);
+	}
+
+
+    [AcceptVerbs(HttpVerbs.Post)]
+    public ActionResult <#=code.Escape(entity)#>_Update([DataSourceRequest]DataSourceRequest request, <#=code.Escape(entity)#> model)
+    {
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _<#=code.Escape(entity)#>Service.Update(model);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Update failed.", ex.Details());
+            }        
+        }
+
+        return Json(new[] { model }.ToDataSourceResult(request, ModelState));
+    }
+
+    [AcceptVerbs(HttpVerbs.Post)]
+    public ActionResult <#=code.Escape(entity)#>_Destroy([DataSourceRequest]DataSourceRequest request, <#=code.Escape(entity)#> model)
+    {
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _<#=code.Escape(entity)#>Service.Destroy(model);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("Delete failed.", ex.Details());
+            }        
+        }
+
+        return Json(new[] { model }.ToDataSourceResult(request, ModelState));
+    }
+
+    #endregion
+}
+<#
+
+        EndNamespace(code); 
+
+}
+
+
+    //fileManager.Process(); 
+    fileManager.Process(CodeStringGenerator.ControllerPath, ""); 
+	
+    //fileManager.Process(@"D:\_Workspace\Jubo.Tours\Jubo.Tours.Portal\Controllers", "");
+    //fileManager.Process(@"C:\Users\Phoenix\Source\Repos\Tours\Jubo.Tours.Portal\Controllers", ""); 
+
+#>
+<#+
+
+public void WriteHeader(CodeStringGenerator codeStringGenerator, EntityFrameworkTemplateFileManager fileManager) 
+{
+    fileManager.StartHeader(); 
+#>
+//------------------------------------------------------------------------------    
+// <auto-generated>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine1")#>
+//
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine2")#>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine3")#>
+// </auto-generated>
+//------------------------------------------------------------------------------   
+
+<#+
+    fileManager.EndBlock();
+}
+
+public void BeginNamespace(CodeGenerationTools code) 
+{
+    var codeNamespace = code.VsNamespaceSuggestion();  
+    if (!String.IsNullOrEmpty(codeNamespace))
+    {
+#>
+using System.Data;
+using System.Data.Entity;
+using System.Linq;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
+using Ewe.Mvc.Extensions;
+using Ewe.Mvc.UI;
+using Ewe.Infrastructure.Specification;
+using Ewe.Mvc.Infrastructure;
+using EWE.Core;
+using <#=CodeStringGenerator.Domain1Namespace#>;
+using <#=CodeStringGenerator.ServiceNamespace#>;
+using <#=CodeStringGenerator.ProjectNamespace#>.Models.Extensions;
+using <#=CodeStringGenerator.ProjectNamespace#>.Models;
+
+
+namespace <#=CodeStringGenerator.WebControllerNamespace#>
+{
+<#+
+        PushIndent("    ");
+    }
+}
+
+public void EndNamespace(CodeGenerationTools code)
+{
+    if (!String.IsNullOrEmpty(code.VsNamespaceSuggestion()))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+
+#>

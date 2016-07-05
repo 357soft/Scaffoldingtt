@@ -1,0 +1,31 @@
+﻿<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@  output extension=".txt"#>
+<#+
+
+
+    public partial class CodeStringGenerator
+    {
+        public bool GenerateAll = false;
+        //public string[] AllowedArray= new string[]{"AspNetUser","AspNetRole"};
+
+
+
+ 
+        public AllowedClass[] AllowedArray1 = new AllowedClass[] {
+
+//IDIn,deliveryNoteNumber,weight,inboundTime,sentTimeIn,isSent,isError,IDOrder,errorMessage,informedTime,status,orderNo,customerRefNo,inlandCarrierNo,remark,customerIdentifier,isErrorOrder,errorMessageOrder,batchNo,outboundTime,isSentOut,yiBatchNo,isErrorOut,errorMessageOut,sentTimeOut,InboundCenter,lead,outbountNumber,outboundLead,province,city,name,SF_DEST_CODE,ZT_MARK,warehouse
+            new AllowedClass(){ EntityName = "FullView",ExcludeProperties = new string[]{"",""},
+                PropertyId = "IDIn",PropertyName = "orderNo",
+                NavigationProperties = new Dictionary<string,string>(){
+                },
+            },
+
+        };
+    }
+
+
+
+
+
+#>

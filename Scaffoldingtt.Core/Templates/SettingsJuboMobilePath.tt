@@ -1,0 +1,95 @@
+﻿<#@ template language="C#" #>
+<#@ include file="SettingsJuboEntities.tt"#>
+<#@  output extension=".txt"#>
+<#+
+
+public const string TemplateId = "CSharp_DbContext_Types_EF6";
+
+const string inputFile = @"C:\Users\Phoenix\Source\Repos\Tours\Jubo.Tours.Charter.Data\jubo.edmx";
+
+
+    public partial class CodeStringGenerator
+    {
+        public static string ProjectNamespace = @"Jubo.Tours.Portal";
+        public static string ServiceProjectNamespace = @"Jubo.Tours.Charter.Services";
+      
+        public static string ServiceNamespace = @"Jubo.Tours.Charter.Services";
+        public static string Domain1Namespace = @"Jubo.Tours.Charter.Domains";
+
+        public static string ProjectPath  = @"C:\Users\Phoenix\Source\Repos\Tours\" + ProjectNamespace;
+        public static string ServiceParentPath  = @"C:\Users\Phoenix\Source\Repos\Tours\" + ServiceProjectNamespace;
+
+        const string _area1name= "Charter";
+
+        public static string ControllerPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Areas\{1}\Controllers",ProjectPath,_area1name);
+            }
+        }
+
+        public static string ViewPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Areas\{1}\Views",ProjectPath,_area1name);
+            }
+        }
+        public static string CriteriaPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Areas\{1}\Views\Shared",ProjectPath,_area1name);
+            }
+        }
+        public static string WebControllerNamespace
+        {
+            get
+            {
+                return string.Format(@"{0}.Areas.{1}.Controllers",ProjectNamespace,_area1name);  
+            }
+        }
+        public static string ServicePath
+        {
+            get
+            {
+                return string.Format(@"{0}\Services",ServiceParentPath);
+            }
+        }
+
+        public static string ModelPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Models\Extensions",ProjectPath);
+            }
+        }
+
+        public static string ViewModelPath
+        {
+            get
+            {
+                return string.Format(@"{0}\Models\",ProjectPath);
+            }
+        }
+
+
+
+        public static string ProjectArea1Namespace
+        {
+            get
+            {
+                return string.Format(@"{0}.Areas.{1}.Controllers",ProjectNamespace,_area1name); 
+            }
+        }
+
+
+    }          
+
+
+
+
+
+
+#>

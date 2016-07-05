@@ -1,0 +1,249 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{5716162C-1931-4B37-B962-5E032733FBCF}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CodeGenerator.Core</RootNamespace>
+    <AssemblyName>CodeGenerator.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Templates\ViewItemDelete.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ViewItemDelete.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\ViewItemDelete.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ViewItemDelete.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\Views21.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Views2.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\_Criteria.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>_Criteria.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\_Criteria.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>_Criteria.tt</DependentUpon>
+    </Content>
+    <None Include="Templates\EF6.Utility.CS.ttinclude1" />
+    <None Include="Templates\SettingsJuboEntities.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsJuboEntities.txt</LastGenOutput>
+    </None>
+    <None Include="Templates\SettingsJuboHomePath.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsJuboHomePath.txt</LastGenOutput>
+    </None>
+    <None Include="Templates\SettingsJuboMobilePath.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsJuboMobilePath.txt</LastGenOutput>
+    </None>
+    <Content Include="Templates\AllowedList.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AllowedList.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\SettingsEweOmsPath.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsEweOmsPath.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\SettingsEweOmsPath.txt">
+      <DependentUpon>SettingsEweOmsPath.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Content>
+    <Content Include="Templates\SettingsEweErpPath.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsEweErpPath.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\SettingsEweErpPath.txt">
+      <DependentUpon>SettingsEweErpPath.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Content>
+    <Content Include="Templates\SettingsEweErpEntities.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsEweErpEntities.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\SettingsEweErpEntities.txt">
+      <DependentUpon>SettingsEweErpEntities.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Content>
+    <Content Include="Templates\ViewCreate.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ViewCreate.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\ViewItemUpdate.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ViewItemUpdate.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\ViewCreate.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ViewCreate.txt</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Templates\AllowedList.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>AllowedList.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\Base.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Base.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\Base.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Base.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\Controller2curd.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Controller2curd1.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\Controller2curd1.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Controller2curd.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\Menu.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Menu.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\Menu.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Menu.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\ModelExtensions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ModelExtensions.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\ModelExtensions.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ModelExtensions.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\Service2.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Service2.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\Service2.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Service2.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\SettingsEwePmsEntities.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsEwePmsEntities.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\SettingsEwePmsEntities.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SettingsEwePmsEntities.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\SettingsEwePmsPath.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SettingsEwePmsPath.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\SettingsEwePmsPath.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SettingsEwePmsPath.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\SettingsJuboEntities.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SettingsJuboEntities.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\SettingsJuboHomePath.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SettingsJuboHomePath.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\SettingsJuboMobilePath.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SettingsJuboMobilePath.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\Specification2.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Specification2.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\Specification2.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Specification2.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\ViewItemUpdate.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ViewItemUpdate.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\ViewModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ViewModel.txt</LastGenOutput>
+    </Content>
+    <Content Include="Templates\ViewModel.txt">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ViewModel.tt</DependentUpon>
+    </Content>
+    <Content Include="Templates\Views2.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Views21.txt</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

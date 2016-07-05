@@ -1,0 +1,451 @@
+﻿<#@ template language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@  output extension=".txt"#>
+<#+
+
+    public partial class CodeStringGenerator
+    {
+        public bool GenerateAll = false;
+        //public string[] AllowedArray= new string[]{"AspNetUser","AspNetRole"};
+
+
+        public AllowedClass[] AllowedArray1 = new AllowedClass[] {
+            //Id,CustomerId,Mobile,HomePhone,Fax,Address,LastName,AliasName,FirstName
+            new AllowedClass(){ EntityName = "Agent",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "AliasName",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"Id","AspNetUser"},
+                    {"CustomerId","Customer"},
+                    },
+                },
+            //Id,Name,Addr,Memo,AreaId
+            new AllowedClass(){ EntityName = "Airport",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    },
+                },
+            //Id,Name,IsSystem
+            new AllowedClass(){ EntityName = "Area",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name
+            new AllowedClass(){ EntityName = "AspNetRole",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Email,EmailConfirmed,PasswordHash,SecurityStamp,PhoneNumber,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEndDateUtc,LockoutEnabled,AccessFailedCount,UserName
+            new AllowedClass(){ EntityName = "AspNetUser",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "UserName",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AgentId","Agent"},
+                    {"Id","Employee"},
+                    },
+                },
+            //Id,ResourceAttractionComboId,ResourceAttractionId
+            //new AllowedClass(){ EntityName = "AttractionComboAttraction",ExcludeProperties = new string[]{"",""},
+                //PropertyId = "Id",PropertyName = "Name",
+                //NavigationProperties = new Dictionary<string,string>(){
+                    //{"ResourceAttractionId","ResourceAttraction"},
+                    //{"ResourceAttraction1Id","ResourceAttraction1"},
+                    //},
+                //},
+            //Id,Name,Description
+            new AllowedClass(){ EntityName = "AutomobileManufacturer",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //CoachIdNumber,Id,CompanyId,CoachTypeId,IsOutsourcing,ActualSize,DefaultDriverId,AreaId,Fuel,ETollCompanyId,ETollNumber,FuelCompanyId,FuelCardNumber,InsuranceId,InsurancePolicy,InsuranceExpDate,VehicleInfoId,Status,OwnerId
+            new AllowedClass(){ EntityName = "Coach",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "CoachIdNumber",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    {"CoachTypeId","CoachType"},
+                    {"CompanyId","Company"},
+                    {"DefaultDriverId","Driver"},
+                    {"OwnerId","Employee"},
+                    {"ETollCompanyId","ETollCompany"},
+                    {"Fuel","Fuel"},
+                    {"FuelCompanyId","FuelCompany"},
+                    {"InsuranceId","InsuranceCompany"},
+                    {"VehicleInfoId","VehicleInformation"},
+                    },
+                },
+            //Id,Repairer,Date,CoachId,Description,Charge,DriverId
+            new AllowedClass(){ EntityName = "CoachRepairing",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Description",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,Size,ColorCSS
+            new AllowedClass(){ EntityName = "CoachType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //CompanyName,TradingName,Address,Tel,Fax,ACN,ABN,Logo,CompanyId,IsOutsourcing,BSB,AccountNo,AccountName,BankName,IsParent,LogoUrl
+            new AllowedClass(){ EntityName = "Company",ExcludeProperties = new string[]{"Logo",""},
+                PropertyId = "CompanyId",PropertyName = "CompanyName",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Name,Tel,Fax,contactor,mobile,EMail,FullName,address,Id
+            new AllowedClass(){ EntityName = "Customer",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Value,Name
+            new AllowedClass(){ EntityName = "DiscountType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //AliasName,FirstName,Mobile,HomePhone,fax,address,LastName,Id,IsOutsourcing,UserId,DriverStatusId,ABN,SupplierId,AreaId
+            new AllowedClass(){ EntityName = "Driver",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "AliasName",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    {"UserId","AspNetUser"},
+                    {"DriverStatusId","DriverStatu"},
+                    {"SupplierId","Supplier"},
+                    },
+                },
+            //ContactNo,DriverLicenseNo,DriverLicenseExpiryDate,DriverAuthorityNo,DriverAuthorityExpiryDate,CommencedEmployment,EmploymentCeased,Memo,AreaId,Id,DriverLicenseTypeId,DriverId
+            new AllowedClass(){ EntityName = "DriverLicense",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "DriverLicenseNo",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    {"DriverId","Driver"},
+                    {"DriverLicenseTypeId","DriverLicenseType"},
+                    },
+                },
+            //DriversLicenceType,Memo,Id
+            new AllowedClass(){ EntityName = "DriverLicenseType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Memo",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Status,EnglishName
+            new AllowedClass(){ EntityName = "DriverStatu",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Status",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,JobTitleId,CompanyId,AliasName,FirstName,Mobile,HomePhone,Fax,Address,LastName,IsCoachOwner
+            new AllowedClass(){ EntityName = "Employee",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "AliasName",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"Id","AspNetUser"},
+                    {"CompanyId","Company"},
+                    {"JobTitleId","JobTitle"},
+                    },
+                },
+            //Id,Name,Description
+            new AllowedClass(){ EntityName = "ETollCompany",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //ExtraType,S13To25,S30To48,Id,Abbr
+            new AllowedClass(){ EntityName = "ExtraCharge",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "ExtraType",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,AirPortId,FlightNumber,FlightTime,OrderDetailId,ArrivalHall,IsFirstDay,DepartAirPortId
+            new AllowedClass(){ EntityName = "FlightDetail",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "FlightNumber",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AirportId","Airport"},
+                    {"OrderDetailId","OrderDetail"},
+                    },
+                },
+            //Id,AirportId,FlightNumber1,FlightTime,IsInternationalArrivalHall,IsDomesticArrivalHall
+            new AllowedClass(){ EntityName = "FlightNumber",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "FlightNumber1",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AirportId","Airport"},
+                    },
+                },
+            //Id,Name
+            new AllowedClass(){ EntityName = "Fuel",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,Description
+            new AllowedClass(){ EntityName = "FuelCompany",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,OrderDetailId,EffectiveDate,CardNumber,TransactionReference,Litres,OriginalValue,VehicleRegistrationNumber
+            new AllowedClass(){ EntityName = "FuelConsumptionDetail",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "CardNumber",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"OrderDetailId","OrderDetail"},
+                    },
+                },
+            //Name,Tel,Fax,Contactor,Mobile,Address,Memo,Id,AreaId,ClassId,TWB,SGL,SUIT,TRP,IncludeBreakfast
+            new AllowedClass(){ EntityName = "Hotel",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    },
+                },
+            //Id,Name,TWB,SGL,SUIT,TRP
+            new AllowedClass(){ EntityName = "HotelStandard",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,Description
+            new AllowedClass(){ EntityName = "InsuranceCompany",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Name,Detail,Id,AreaId,BigCoachDriverCharge,SmallCoachDriverCharge,ClassId
+            new AllowedClass(){ EntityName = "Itinerary",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    {"ItineraryClassId","ItineraryClass"},
+                    },
+                },
+            //Id,Name,Value
+            new AllowedClass(){ EntityName = "ItineraryClass",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,OrderDetailId,StartTime,CoachDestinationTypeId,DestinationId,Detail,Time1,Time2
+            new AllowedClass(){ EntityName = "ItineraryDetail",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Detail",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"HotelId","Hotel"},
+                    {"OrderDetailId","OrderDetail"},
+                    {"ResourceAttractionId","ResourceAttraction"},
+                    {"ResourceCoachDestinationTypeId","ResourceCoachDestinationType"},
+                    {"ResourceFlightNumberId","ResourceFlightNumber"},
+                    {"ResourceRestaurantId","ResourceRestaurant"},
+                    },
+                },
+            //Id,CustomerId,ItineraryId,CoachTypeId,Price,YearId
+            new AllowedClass(){ EntityName = "ItineraryPrice",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Price",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"CoachTypeId","CoachType"},
+                    {"CustomerId","Customer"},
+                    {"ItineraryId","Itinerary"},
+                    {"ItineraryPriceYearId","ItineraryPriceYear"},
+                    },
+                },
+            //Id,YearId,Remark,CustomerId
+            new AllowedClass(){ EntityName = "ItineraryPriceCustomer",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Remark",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"CustomerId","Customer"},
+                    {"ItineraryPriceYearId","ItineraryPriceYear"},
+                    },
+                },
+            //Id,Year,StartDate,EndDate,Remark
+            new AllowedClass(){ EntityName = "ItineraryPriceYear",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Year",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,EnglishName
+            new AllowedClass(){ EntityName = "JobTitle",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,MealTypeId,ADL,CHD,ADLVip,CHDVip
+            new AllowedClass(){ EntityName = "MealStandard",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"MealTypeId","MealType"},
+                    },
+                },
+            //Id,Name
+            new AllowedClass(){ EntityName = "MealType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,URL,ParentId,Description
+            new AllowedClass(){ EntityName = "Module",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"Module1Id","Module1"},
+                    },
+                },
+            //OrderDate,ReferenceNo,Memo,Id,CustomerId,SubmitDate,OrderId,UserId,ItineraryFilePath,StatusId,Pricing,TourLeaderName,TourLeaderMobile
+            new AllowedClass(){ EntityName = "Order",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "OrderId",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"CustomerId","Customer"},
+                    {"UserId","Employee"},
+                    {"StatusId","OrderDetailStatu"},
+                    },
+                },
+            //Id,OrderId,Date,IsFirstDay,IsLastDay,StartTime,EndTime,ItineraryId,ItineraryDetailsString,Number,CoachTypeID,DayCharge,DiscountTypeId,DiscountFee,HotelCharge,DriverId,CoachId,salary,StatusId,CancelFee,SubmitDate,Notes,ManagerNotifyDriver,OPNotifyDriver,Tr,Memo,SourceAreaId,GasolineCost,TollCharge,Pricing,TrailerId,IsConfirmed,FuelQuantity,DayDetailHTML,Remark,HotelId,HotelCost,TickitCost,MealCost,OtherCost,SalesTotal
+            new AllowedClass(){ EntityName = "OrderDetail",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "ItineraryDetailsString",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"SourceAreaId","Area"},
+                    {"CoachId","Coach"},
+                    {"CoachTypeID","CoachType"},
+                    {"DiscountTypeId","DiscountType"},
+                    {"DriverId","Driver"},
+                    {"HotelId","Hotel"},
+                    {"ItineraryId","Itinerary"},
+                    {"OrderId","Order"},
+                    {"StatusId","OrderDetailStatu"},
+                    {"TrailerId","Trailer"},
+                    },
+                },
+            //OrderDetailId,ExtraChargeId,Fee,Id
+            new AllowedClass(){ EntityName = "OrderDetailExtraCharge",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Fee",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"ExtraChargeId","ExtraCharge"},
+                    {"OrderDetailId","OrderDetail"},
+                    },
+                },
+            //ID,status
+            new AllowedClass(){ EntityName = "OrderDetailStatu",ExcludeProperties = new string[]{"",""},
+                PropertyId = "ID",PropertyName = "status",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //EntityId,OrderLogTypeId,ActionId,SubmitDate,UserId,LogId
+            new AllowedClass(){ EntityName = "OrderLog",ExcludeProperties = new string[]{"",""},
+                PropertyId = "LogId",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AspNetUserId","AspNetUser"},
+                    },
+                },
+            //Id,OrderListString,Description,SubmitedDate
+            new AllowedClass(){ EntityName = "OrdersGroup",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "OrderListString",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,Address,Description
+            new AllowedClass(){ EntityName = "ResourceAirPort",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,Description,ADL,CHD,Address,Tel,Fax
+            new AllowedClass(){ EntityName = "ResourceAttraction",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,ResourceTypeId,Name,Description
+            new AllowedClass(){ EntityName = "ResourceClass",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"ResourceTypeId","ResourceType"},
+                    },
+                },
+            //Id,Name,Value,Description
+            new AllowedClass(){ EntityName = "ResourceCoachAction",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,Value,Description,LogoUrl
+            new AllowedClass(){ EntityName = "ResourceCoachDestinationType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Name,Abbr,Description,Id
+            new AllowedClass(){ EntityName = "ResourceExtraItemType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,AirPortId,Name,FlightTime,ArrivalHall,ArriveAirPortId,ArriveFlightTime
+            new AllowedClass(){ EntityName = "ResourceFlightNumber",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AirportId","Airport"},
+                    },
+                },
+            //Id,Name,AreaId,ClassId,Address,Tel,Fax,Description,TWB,SGL,SUIT,TRP,IncludeBreakfast
+            new AllowedClass(){ EntityName = "ResourceHotel",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,Name,AreaId,Address,Tel,Fax,Description
+            new AllowedClass(){ EntityName = "ResourceRestaurant",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,ClassId,Adl,Chd,ResourceRestaurantId
+            new AllowedClass(){ EntityName = "ResourceRestaurantPrice",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"ResourceClassId","ResourceClass"},
+                    {"ResourceRestaurantId","ResourceRestaurant"},
+                    },
+                },
+            //Id,Name,Description
+            new AllowedClass(){ EntityName = "ResourceType",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,RoleId,IsAllowed,IsShowInMenu,ModuleId
+            new AllowedClass(){ EntityName = "RolePermission",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AspNetRoleId","AspNetRole"},
+                    {"ModuleId","Module"},
+                    },
+                },
+            //Name,TradingName,Address,Tel,Fax,ACN,ABN,Id,BSB,AccountNo,AccountName,BankName
+            new AllowedClass(){ EntityName = "Supplier",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    },
+                },
+            //Id,TrailerIdNumber,CompanyId,AreaId,DefaultCoachId,Status,VehicleInfoId
+            new AllowedClass(){ EntityName = "Trailer",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "TrailerIdNumber",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AreaId","Area"},
+                    {"DefaultCoachId","Coach"},
+                    {"CompanyId","Company"},
+                    {"VehicleInfoId","VehicleInformation"},
+                    },
+                },
+            //BillingNO,RegoDueDate,RegoExpDate,RegoAmount,CTP,CTPDueDate,CTPExpDate,CTPAmount,HalfInspectionDate,YearlyInspectionDate,CustomerNo,PurchaseDate,Model,AutomobileManufacturerId,VinNo,EngineNo,YearOfManufacture,Id
+            new AllowedClass(){ EntityName = "VehicleInformation",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Model",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AutomobileManufacturerId","AutomobileManufacturer"},
+                    },
+                },
+            //Id,Name,Description,ParentId,Priority,Writer,Feedback,Status,CreateDateTime,WorkDays,StartDate,EndDate
+            new AllowedClass(){ EntityName = "WorkItem",ExcludeProperties = new string[]{"",""},
+                PropertyId = "Id",PropertyName = "Name",
+                NavigationProperties = new Dictionary<string,string>(){
+                    {"AspNetUserId","AspNetUser"},
+                    },
+                },
+            };
+    }
+#>

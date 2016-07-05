@@ -1,0 +1,29 @@
+﻿
+
+ 
+    <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Data<span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+                    <li>@Html.ActionLink("Brand", "BrandIndexT", "Brand")</li>
+                    <li>@Html.ActionLink("Category", "CategoryIndexT", "Category")</li>
+                    <li>@Html.ActionLink("Declaration", "DeclarationIndexT", "Declaration")</li>
+                    <li>@Html.ActionLink("EntryPort", "EntryPortIndexT", "EntryPort")</li>
+                    <li>@Html.ActionLink("Product", "ProductIndexT", "Product")</li>
+                    <li>@Html.ActionLink("ProductAlia", "ProductAliaIndexT", "ProductAlia")</li>
+                    <li>@Html.ActionLink("ProductTax", "ProductTaxIndexT", "ProductTax")</li>
+                    <li>@Html.ActionLink("SimpleDeclaration", "SimpleDeclarationIndexT", "SimpleDeclaration")</li>
+                    <li>@Html.ActionLink("TaxCode", "TaxCodeIndexT", "TaxCode")</li>
+        </ul>
+    </li>
+
+    children.Add().Text("Furniture").Items(innerChildren =>{
+                    innerChildren.Add().Text("Brand").Action("BrandIndexT", "Brand");
+                    innerChildren.Add().Text("Category").Action("CategoryIndexT", "Category");
+                    innerChildren.Add().Text("Declaration").Action("DeclarationIndexT", "Declaration");
+                    innerChildren.Add().Text("EntryPort").Action("EntryPortIndexT", "EntryPort");
+                    innerChildren.Add().Text("Product").Action("ProductIndexT", "Product");
+                    innerChildren.Add().Text("ProductAlia").Action("ProductAliaIndexT", "ProductAlia");
+                    innerChildren.Add().Text("ProductTax").Action("ProductTaxIndexT", "ProductTax");
+                    innerChildren.Add().Text("SimpleDeclaration").Action("SimpleDeclarationIndexT", "SimpleDeclaration");
+                    innerChildren.Add().Text("TaxCode").Action("TaxCodeIndexT", "TaxCode");
+    });

@@ -1,0 +1,277 @@
+﻿<#@ template language="C#" debug="false" hostspecific="true"#>
+<#@ include file="base.tt"#><#@ 
+ output extension=".cshtml"#><#
+
+var textTransform = DynamicTextTransformation.Create(this);
+var code = new CodeGenerationTools(this); 
+var ef = new MetadataTools(this);
+var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
+var	fileManager = EntityFrameworkTemplateFileManager.Create(this);
+var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);  
+var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
+var container = itemCollection.OfType<EntityContainer>().FirstOrDefault();
+
+if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile)) 
+{
+    return string.Empty;
+}
+
+WriteHeader(codeStringGenerator, fileManager);
+
+foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection))
+{
+    if(!codeStringGenerator.GenerateAll)
+    {
+        var founditem= codeStringGenerator.Allowed(entity.Name); 
+
+        if(!founditem)
+            continue;
+    }
+
+    fileManager.StartNewFile("_criteria" + entity.Name + ".cshtml"); 
+
+    var dbsetproperty = codeStringGenerator.GetDbSetProperty(container,entity); 
+
+    foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+    {
+        if(typeMapper.GetTypeName(entitySet.ElementType) == code.Escape(entity))
+            dbsetproperty = code.Escape(entitySet);
+    }
+
+        var entityId = codeStringGenerator.GetAllowedClass(entity.Name).PropertyId;
+
+    var propertiesWithDefaultValues = typeMapper.GetPropertiesWithDefaultValues(entity); 
+    var collectionNavigationProperties = typeMapper.GetCollectionNavigationProperties(entity);
+
+    var simpleProperties = typeMapper.GetSimpleProperties(entity, codeStringGenerator.GetEntityExcludedProperites(entity.Name));  
+    if (simpleProperties.Any())
+    {
+#>
+
+<div class="container-fluid">
+
+    <div class="row clearfix">
+<#
+        foreach (var edmProperty in simpleProperties) 
+        {
+#>
+        <#=codeStringGenerator.CriteriaBuilder(edmProperty)#> 
+<#
+        }
+#>
+        <div class="col-md-3"><h4> </h4><input onclick="refreshGrid<#=entity.Name#>()" type="button" id="QueryButton" value="Query" class="btn btn-default"></div>  
+
+    </div>
+</div>
+
+
+<script>
+
+$(document).ready(function () {
+
+<#
+        foreach (var edmProperty in simpleProperties) 
+        {
+#>
+        <#=codeStringGenerator.InitCriteriaControls(edmProperty)#>  
+<#
+        }
+#>
+
+});
+
+<#
+            
+	    foreach (var forginKeyDict in codeStringGenerator.ForginKeys(entity.Name))
+        {
+
+            var forginKey = forginKeyDict.Value; 
+            var forginKeyDbsetproperty = forginKey;
+
+            foreach (var entitySet in container.BaseEntitySets.OfType<EntitySet>())
+            {
+                if(typeMapper.GetTypeName(entitySet.ElementType) == forginKey)
+                    forginKeyDbsetproperty = code.Escape(entitySet);
+            }
+
+            var allowedclass = codeStringGenerator.GetAllowedClass(forginKey);
+            var id = "Id";
+            var name = "Name";
+            if(allowedclass != null)
+            {
+                id = allowedclass.PropertyId;
+                name = allowedclass.PropertyName;
+            }
+
+#>
+
+    //$(document).ready(function () {
+        //$.ajax({
+            //url: '@Html.Raw(Url.Action("<#=forginKeyDbsetproperty#>ViewModel_Read", "<#=forginKey#>"))',
+            //contentType: "application/json; charset=utf-8",
+            //dataType: "json",
+            //success: function (data) {
+                //<#=forginKey#>DataSource = new kendo.data.DataSource({
+                    //data: data.Data,
+                //});
+                //return true;
+            //},
+            //error: function (msg) {
+                ////alert(msg);
+                //return false;
+            //}
+        //});
+    //});
+
+    var <#=forginKey#>DataSource = new kendo.data.DataSource({
+        type: "json",
+        serverFiltering: true,
+        transport: {
+            read: {
+                url: '@Html.Raw(Url.Action("<#=forginKey#>Filter_Read", "<#=forginKey#>"))',  
+            }
+        },
+        schema: {
+            data: "Data",
+            total: "Total",
+            errors: "Errors",
+        },
+        pageSize: 20,
+        serverPaging: true,
+    });
+
+    $("#<#=forginKey#>Id").kendoComboBox({ 
+        placeholder: "Search <#=forginKey#>",  
+        dataTextField: "<#=name#>",
+        dataValueField: "<#=id#>",
+        dataSource: <#=forginKey#>DataSource,
+        filter: "contains",
+        autoBind: false,
+        minLength: 1, 
+    });
+
+    function <#=forginKey#>DropDownEditor(container, options) {
+        currentModel = options.model;
+        $('<input required data-text-field="<#=name#>" data-value-field="<#=id#>" data-bind="value:' + options.field + '"/>')  
+        .appendTo(container)
+        .kendoComboBox({
+            autoBind: true,
+            dataSource: {
+                type: "json",
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: '@Html.Raw(Url.Action("<#=forginKey#>Filter_Read", "<#=forginKey#>"))', 
+                        data: {<#=id#>: options.model.<#=forginKeyDict.Key#>},
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                },
+                pageSize: 20,
+                serverPaging: true,
+            },
+            change: function(e) {
+                temp1 = this.text();
+                currentModel.<#=forginKeyDict.Key#> = this.value();
+                //$.ajax({
+                    //type: "Post",
+                    //url: '@Html.Raw(Url.Action("<#=code.Escape(entity)#>_Update2", "<#=entity.Name#>"))',
+                    //data: JSON.stringify(currentModel),
+                    //contentType: "application/json; charset=utf-8",
+                    //dataType: "json",
+                    //success: function (data) {
+                        //return true;
+                    //},
+                    //error: function (msg) {
+                        //return false;
+                    //}
+                //});
+            },
+            filter: "contains",
+            minLength: 1,
+        });
+    }
+
+
+<#
+        } 
+
+#>
+
+
+    function additionalData() {
+
+        return {
+<#
+        foreach (var edmProperty in simpleProperties)
+        {
+#>
+            <#=codeStringGenerator.AdditionalBuilder(edmProperty)#> 
+<#
+        }
+#>
+        };
+    }
+
+</script>
+<#
+    }
+
+
+
+
+}
+
+    fileManager.Process(CodeStringGenerator.CriteriaPath, "");
+
+
+#>
+<#+
+
+public void WriteHeader(CodeStringGenerator codeStringGenerator, EntityFrameworkTemplateFileManager fileManager)
+{
+    fileManager.StartHeader();
+#>
+@*//------------------------------------------------------------------------------
+// <auto-generated>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine1")#>
+//
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine2")#>
+// <#=CodeGenerationTools.GetResourceString("Template_GeneratedCodeCommentLine3")#>
+// </auto-generated>
+//------------------------------------------------------------------------------*@
+
+<#=codeStringGenerator.UsingDirectives(inHeader: true)#>
+<#+
+    fileManager.EndBlock();
+}
+
+public void BeginNamespace(CodeGenerationTools code)
+{
+    var codeNamespace = code.VsNamespaceSuggestion();
+    if (!String.IsNullOrEmpty(codeNamespace))
+    {
+#>
+namespace <#=code.EscapeNamespace(codeNamespace)#>
+{
+<#+
+        PushIndent("    ");
+    }
+}
+
+public void EndNamespace(CodeGenerationTools code)
+{
+    if (!String.IsNullOrEmpty(code.VsNamespaceSuggestion()))
+    {
+        PopIndent();
+#>
+}
+<#+
+    }
+}
+
+
+#>
